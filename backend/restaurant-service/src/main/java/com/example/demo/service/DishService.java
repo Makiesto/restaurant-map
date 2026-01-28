@@ -8,6 +8,7 @@ import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.repository.ComponentRepository;
 import com.example.demo.repository.DishRepository;
 import com.example.demo.repository.RestaurantRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -91,6 +92,54 @@ public class DishService {
     }
 
     @Transactional
+    public DishResponseDTO updateDish(Long id, DishCreateRequestDTO request, Long userId) {
+        log.info("Updating dish: {} by user: {}", id, userId);
+
+        Dish dish = dishRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Dish not found with ID: " + id));
+
+        // Check if user is the restaurant owner
+        if (!dish.getRestaurant().getOwner().getId().equals(userId)) {
+            throw new UnauthorizedException("You can only update dishes from your own restaurants");
+        }
+
+        // Update basic fields
+        dish.setName(request.getName());
+        dish.setDescription(request.getDescription());
+        dish.setPrice(request.getPrice());
+        dish.setImgUrl(request.getImageUrl());
+
+        // Update components if provided
+        if (request.getComponents() != null) {
+            // Clear existing components
+            dish.getDishComponents().clear();
+
+            // Add new components
+            for (DishCreateRequestDTO.DishComponentRequest compReq : request.getComponents()) {
+                Component component = componentRepository.findById(compReq.getComponentId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Component not found with ID: " + compReq.getComponentId()));
+
+                DishComponent dishComponent = DishComponent.builder()
+                        .dish(dish)
+                        .component(component)
+                        .amount(compReq.getAmount())
+                        .isOptional(compReq.getIsOptional())
+                        .build();
+
+                dish.getDishComponents().add(dishComponent);
+            }
+
+            // Recalculate macros
+            calculateMacros(dish);
+        }
+
+        Dish savedDish = dishRepository.save(dish);
+        log.info("Dish updated: {}", id);
+
+        return mapToResponse(savedDish);
+    }
+
+    @Transactional
     public void deleteDish(Long dishId, Long userId) {
         log.info("Deleting dish: {} by user: {}", dishId, userId);
 
@@ -162,4 +211,5 @@ public class DishService {
                 .allergens(allergens.stream().collect(Collectors.toList()))
                 .build();
     }
+
 }
