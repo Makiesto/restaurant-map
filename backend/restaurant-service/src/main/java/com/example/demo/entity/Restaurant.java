@@ -29,6 +29,9 @@ public class Restaurant {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String address;
+
     private Double latitude;
 
     private Double longitude;
@@ -49,7 +52,7 @@ public class Restaurant {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    private String status;
+    private RestaurantStatus status;
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Dish> dishes = new ArrayList<>();

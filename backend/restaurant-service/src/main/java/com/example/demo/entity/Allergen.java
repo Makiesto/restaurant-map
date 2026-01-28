@@ -1,10 +1,7 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -27,9 +24,11 @@ public class Allergen {
     @Column(name = "severity_level")
     private String severityLevel;
 
-    @OneToMany(mappedBy = "allergen", cascade = CascadeType.ALL)
-    private Set<UserAllergen> userAllergens = new HashSet<>();
-
-    @OneToMany(mappedBy = "allergen", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "allergens")
+    @Builder.Default
     private Set<Component> components = new HashSet<>();
+
+    @ManyToMany(mappedBy = "allergens")
+    @Builder.Default
+    private Set<User> users = new HashSet<>();
 }
