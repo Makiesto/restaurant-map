@@ -1,0 +1,117 @@
+package com.example.demo.service;
+
+
+import com.example.demo.dto.user.UserRegistrationRequestDTO;
+import com.example.demo.dto.user.UserResponseDTO;
+import com.example.demo.entity.Role;
+import com.example.demo.entity.User;
+import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.exception.ValidationException;
+import com.example.demo.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class UserService {
+
+    private final UserRepository userRepository;
+    // TODO: Add PasswordEncoder when implementing security
+    // private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public UserResponseDTO registerUser(UserRegistrationRequestDTO request) {
+        log.info("Registering new user with email: {}", request.getEmail());
+
+        // Check if email already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ValidationException("Email already registered");
+        }
+
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(request.getPassword()) // TODO: Hash with passwordEncoder.encode()
+                .phoneNumber(request.getPhoneNumber())
+                .role(Role.USER)
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        User savedUser = userRepository.save(user);
+        log.info("User registered successfully with ID: {}", savedUser.getId());
+
+        return mapToResponse(savedUser);
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+        return mapToResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDTO getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return mapToResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserResponseDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UserResponseDTO verifyUser(Long userId) {
+        log.info("Verifying user with ID: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        user.setRole(Role.VERIFIED_USER);
+        user.setVerifiedAt(LocalDateTime.now());
+
+        User savedUser = userRepository.save(user);
+        log.info("User verified successfully: {}", userId);
+
+        return mapToResponse(savedUser);
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        log.info("Deleting user with ID: {}", userId);
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found with ID: " + userId);
+        }
+
+        userRepository.deleteById(userId);
+        log.info("User deleted successfully: {}", userId);
+    }
+
+    private UserResponseDTO mapToResponse(User user) {
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .role(user.getRole())
+                .isActive(user.getIsActive())
+                .createdAt(user.getCreatedAt())
+                .verifiedAt(user.getVerifiedAt())
+                .build();
+    }
+}
