@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.dish.DishCreateRequestDTO;
 import com.example.demo.dto.dish.DishResponseDTO;
+import com.example.demo.security.SecurityUtil;
 import com.example.demo.service.DishService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.List;
 public class DishController {
 
     private final DishService dishService;
+    private final SecurityUtil securityUtil;
 
     /**
      * PUBLIC: Get restaurant menu (all dishes)
@@ -44,28 +46,31 @@ public class DishController {
 
     /**
      * VERIFIED_USER: Add dish to my restaurant
-     * TODO: Add @PreAuthorize after implementing security
      */
     @PostMapping("/restaurants/{restaurantId}/dishes")
     public ResponseEntity<DishResponseDTO> createDish(
             @PathVariable Long restaurantId,
-            @Valid @RequestBody DishCreateRequestDTO request,
-            @RequestHeader("User-Id") Long userId) { // TODO: Get from JWT token
+            @Valid @RequestBody DishCreateRequestDTO request) {
+
+        Long userId = securityUtil.getCurrentUserId();
+
         log.info("POST /api/restaurants/{}/dishes - creating dish: {} for user: {}",
                 restaurantId, request.getName(), userId);
+
         DishResponseDTO dish = dishService.createDish(request, restaurantId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(dish);
     }
 
     /**
      * VERIFIED_USER: Update my dish
-     * TODO: Add @PreAuthorize after implementing security
      */
     @PutMapping("/dishes/{id}")
     public ResponseEntity<DishResponseDTO> updateDish(
             @PathVariable Long id,
-            @Valid @RequestBody DishCreateRequestDTO request,
-            @RequestHeader("User-Id") Long userId) { // TODO: Get from JWT token
+            @Valid @RequestBody DishCreateRequestDTO request) {
+
+        Long userId = securityUtil.getCurrentUserId();
+
         log.info("PUT /api/dishes/{} - updating dish for user: {}", id, userId);
         DishResponseDTO dish = dishService.updateDish(id, request, userId);
         return ResponseEntity.ok(dish);
@@ -73,12 +78,12 @@ public class DishController {
 
     /**
      * VERIFIED_USER: Delete my dish
-     * TODO: Add @PreAuthorize after implementing security
      */
     @DeleteMapping("/dishes/{id}")
-    public ResponseEntity<Void> deleteDish(
-            @PathVariable Long id,
-            @RequestHeader("User-Id") Long userId) { // TODO: Get from JWT token
+    public ResponseEntity<Void> deleteDish(@PathVariable Long id) {
+
+        Long userId = securityUtil.getCurrentUserId();
+
         log.info("DELETE /api/dishes/{} - deleting dish for user: {}", id, userId);
         dishService.deleteDish(id, userId);
         return ResponseEntity.noContent().build();

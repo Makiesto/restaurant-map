@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: restaurant-db
     environment:
-      POSTGRES_DB: ${POSTGRES_RESTAURANT_DB:-restaurant-map-db} 
-      POSTGRES_USER: ${POSTGRES_USER1:-restaurant_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD1:-postgres}
+      POSTGRES_DB: ${POSTGRES_RESTAURANT_DB:-restaurant_map_db} 
+      POSTGRES_USER: ${POSTGRES_USER1:-matt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD1:-supersecret}
     ports:
       - "5442:5432"
     volumes:

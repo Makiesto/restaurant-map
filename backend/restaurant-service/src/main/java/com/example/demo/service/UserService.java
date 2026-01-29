@@ -10,6 +10,7 @@ import com.example.demo.exception.ValidationException;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,14 +18,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static io.jsonwebtoken.security.Keys.password;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
-    // TODO: Add PasswordEncoder when implementing security
-    // private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public UserResponseDTO registerUser(UserRegistrationRequestDTO request) {
@@ -39,7 +41,7 @@ public class UserService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
-                .password(request.getPassword()) // TODO: Hash with passwordEncoder.encode()
+                .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
                 .role(Role.USER)
                 .isActive(true)
