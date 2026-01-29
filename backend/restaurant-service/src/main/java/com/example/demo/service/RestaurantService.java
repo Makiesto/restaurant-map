@@ -41,14 +41,20 @@ public class RestaurantService {
             throw new UnauthorizedException("Only verified users can create restaurants");
         }
 
-        GeocodingService.GeocodingResult coordinates =
-                geocodingService.geocodeAddress(request.getAddress());
+        // TODO
+//        GeocodingService.GeocodingResult coordinates =
+//                geocodingService.geocodeAddress(request.getAddress());
+
+        Double latitude = 50.061698;
+        Double longitude = 19.937206;
 
         Restaurant restaurant = Restaurant.builder()
                 .name(request.getName())
                 .address(request.getAddress())
-                .latitude(coordinates.getLatitude())
-                .longitude(coordinates.getLongitude())
+                .latitude(latitude)
+                .longitude(longitude)
+//                .latitude(coordinates.getLatitude())
+//                .longitude(coordinates.getLongitude())
                 .phone(request.getPhone())
                 .description(request.getDescription())
                 .openingHours(request.getOpeningHours())

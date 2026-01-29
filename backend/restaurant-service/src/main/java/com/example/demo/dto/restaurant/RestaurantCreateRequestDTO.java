@@ -13,10 +13,8 @@ public class RestaurantCreateRequestDTO {
     @NotBlank(message = "Address is required")
     private String address;
 
-    @NotNull(message = "Latitude is required")
     private Double latitude;
 
-    @NotNull(message = "Longitude is required")
     private Double longitude;
 
     private String phone;
