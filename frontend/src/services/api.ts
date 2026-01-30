@@ -1,7 +1,7 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { AuthResponse, LoginRequest, RegisterRequest } from '../types/auth.types';
-import { Restaurant, CreateRestaurantRequest } from '../types/restaurant.types';
-import { Dish, CreateDishRequest } from '../types/dish.types';
+import axios, {type AxiosInstance, AxiosError } from 'axios';
+import type {AuthResponse, LoginRequest, RegisterRequest, User} from '../types/auth.types';
+import type {Restaurant, CreateRestaurantRequest} from '../types/restaurant.types';
+import type {Dish, CreateDishRequest} from '../types/dish.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
