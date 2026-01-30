@@ -1,0 +1,121 @@
+# ============================================
+# restaurant-map MONOREPO .gitignore
+# ============================================
+
+# ==========================================
+# ENVIRONMENT & SECRETS
+# ==========================================
+.env
+.env.local
+.env.*.local
+*.env
+
+# ==========================================
+# BACKEND (Spring Boot / Maven)
+# ==========================================
+
+# Compiled class files
+*.class
+
+# Maven
+backend/**/target/
+backend/**/*.jar
+backend/**/*.war
+backend/**/*.nar
+backend/**/*.ear
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+backend/**/.mvn/timing.properties
+backend/**/.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+spring-boot-*.log
+
+# ==========================================
+# FRONTEND (React + Vite + TypeScript)
+# ==========================================
+
+# Dependencies
+frontend/**/node_modules/
+frontend/**/.pnp
+frontend/**/.pnp.*
+
+# Production build
+frontend/**/dist/
+frontend/**/dist-ssr/
+frontend/**/build/
+
+# Vite cache
+frontend/**/.vite/
+frontend/**/vite.config.*.timestamp-*
+
+# TypeScript
+frontend/**/*.tsbuildinfo
+
+# Testing
+frontend/**/coverage/
+frontend/**/*.lcov
+
+# Optional caches
+frontend/**/.npm
+frontend/**/.eslintcache
+
+# ==========================================
+# IDE / EDITORS
+# ==========================================
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+out/
+
+# ==========================================
+# LOGS
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logfile
+
+# ==========================================
+# DATABASE
+# ==========================================
+*.db
+*.sqlite
+*.h2.db
+postgres_data/
+pgdata/
+/data/
+
+# ==========================================
+# OS FILES
+# ==========================================
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.temp
+
+# ==========================================
+# TEMPORARY FILES
+# ==========================================
+.tmp/
+temp/
+tmp/
+
