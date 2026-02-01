@@ -1,0 +1,298 @@
+/* Map Wrapper */
+.map-wrapper {
+  display: flex;
+  height: calc(100vh - 64px);
+  position: relative;
+}
+
+/* Sidebar */
+.map-sidebar {
+  width: 400px;
+  background: white;
+  border-right: 1px solid #e2e8f0;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.sidebar-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.restaurant-count {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Restaurant List */
+.restaurant-list {
+  padding: 16px;
+}
+
+.restaurant-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.restaurant-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.restaurant-card.active {
+  border-color: #667eea;
+  background: linear-gradient(to right, #f7fafc, #ffffff);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.restaurant-info h3 {
+  margin: 0 0 12px 0;
+  color: #1a202c;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.restaurant-info p {
+  margin: 8px 0;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.address {
+  color: #718096 !important;
+}
+
+.phone {
+  color: #718096 !important;
+}
+
+.rating {
+  display: inline-block;
+  background: #fef5e7;
+  color: #f39c12;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.btn-view-details {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 12px;
+}
+
+.btn-view-details:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* No Restaurants */
+.no-restaurants {
+  text-align: center;
+  padding: 40px 20px;
+  color: #718096;
+}
+
+.no-restaurants p {
+  margin: 8px 0;
+}
+
+.text-muted {
+  font-size: 14px;
+  color: #a0aec0;
+}
+
+/* Map Container */
+.map-container {
+  flex: 1;
+  position: relative;
+}
+
+/* Leaflet Popup Customization */
+.marker-popup {
+  min-width: 200px;
+}
+
+.marker-popup h3 {
+  margin: 0 0 8px 0;
+  color: #1a202c;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.popup-address {
+  color: #718096;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.popup-description {
+  color: #4a5568;
+  font-size: 13px;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.popup-hours,
+.popup-phone {
+  color: #4a5568;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.btn-popup-details {
+  width: 100%;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+.btn-popup-details:hover {
+  background: #5568d3;
+}
+
+/* Loading State */
+.map-loading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 64px);
+  gap: 16px;
+}
+
+.map-loading p {
+  color: #718096;
+  font-size: 16px;
+}
+
+/* Error State */
+.map-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 64px);
+  gap: 16px;
+}
+
+.map-error p {
+  color: #e53e3e;
+  font-size: 16px;
+}
+
+.btn-retry {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .map-sidebar {
+    width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .map-wrapper {
+    flex-direction: column;
+  }
+
+  .map-sidebar {
+    width: 100%;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .map-container {
+    height: 60vh;
+  }
+
+  .restaurant-card {
+    padding: 16px;
+  }
+
+  .restaurant-info h3 {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-header {
+    padding: 16px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 20px;
+  }
+
+  .restaurant-list {
+    padding: 12px;
+  }
+
+  .restaurant-card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+}
+
+/* Leaflet Override - Make sure controls are visible */
+.leaflet-control-zoom {
+  border: 2px solid rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+
+.leaflet-bar a {
+  background-color: #fff;
+  border-bottom: 1px solid #ccc;
+  color: #333;
+}
+
+.leaflet-bar a:hover {
+  background-color: #f4f4f4;
+}

@@ -20,7 +20,7 @@ const Navbar: React.FC = () => {
         </Link>
 
         <div className="navbar-menu">
-          <Link to="/" className="navbar-link">
+          <Link to="/map" className="navbar-link">
             Map
           </Link>
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home: React.FC = () => {
@@ -20,18 +21,22 @@ const Home: React.FC = () => {
             </p>
 
             <div className="feature-grid">
-              <div className="feature-card">
-                <div className="feature-icon">🗺️</div>
-                <h3>Explore Map</h3>
-                <p>Discover restaurants near you with detailed nutrition info</p>
-              </div>
+              <Link to="/map" className="feature-card-link">
+                <div className="feature-card">
+                  <div className="feature-icon">🗺️</div>
+                  <h3>Explore Map</h3>
+                  <p>Discover restaurants near you with detailed nutrition info</p>
+                </div>
+              </Link>
 
               {user?.role === 'VERIFIED_USER' || user?.role === 'ADMIN' ? (
-                <div className="feature-card">
-                  <div className="feature-icon">🏪</div>
-                  <h3>My Restaurants</h3>
-                  <p>Manage your restaurant listings and menus</p>
-                </div>
+                <Link to="/dashboard" className="feature-card-link">
+                  <div className="feature-card">
+                    <div className="feature-icon">🏪</div>
+                    <h3>My Restaurants</h3>
+                    <p>Manage your restaurant listings and menus</p>
+                  </div>
+                </Link>
               ) : (
                 <div className="feature-card disabled">
                   <div className="feature-icon">🔒</div>
@@ -41,17 +46,19 @@ const Home: React.FC = () => {
               )}
 
               {user?.role === 'ADMIN' && (
-                <div className="feature-card">
-                  <div className="feature-icon">👑</div>
-                  <h3>Admin Panel</h3>
-                  <p>Approve restaurants and verify users</p>
-                </div>
+                <Link to="/admin" className="feature-card-link">
+                  <div className="feature-card">
+                    <div className="feature-icon">👑</div>
+                    <h3>Admin Panel</h3>
+                    <p>Approve restaurants and verify users</p>
+                  </div>
+                </Link>
               )}
 
-              <div className="feature-card">
+              <div className="feature-card disabled">
                 <div className="feature-icon">⚠️</div>
                 <h3>Allergen Alerts</h3>
-                <p>Set your allergens and get instant warnings</p>
+                <p>Set your allergens and get instant warnings (Coming Soon)</p>
               </div>
             </div>
           </div>
@@ -81,12 +88,12 @@ const Home: React.FC = () => {
             </div>
 
             <div className="cta-buttons">
-              <a href="/register" className="btn-primary-large">
+              <Link to="/map" className="btn-secondary-large">
+                Explore Map
+              </Link>
+              <Link to="/register" className="btn-primary-large">
                 Get Started Free
-              </a>
-              <a href="/login" className="btn-secondary-large">
-                Sign In
-              </a>
+              </Link>
             </div>
           </div>
         )}

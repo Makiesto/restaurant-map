@@ -5,6 +5,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Map from './components/Map';
+import RestaurantDetails from './pages/RestaurantDetails';
 import './App.css';
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/map" element={<Map />} />
+            <Route path="/restaurant/:id" element={<RestaurantDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
