@@ -91,6 +91,15 @@ class ApiService {
     return response.data;
   }
 
+  async updateDish(dishId: number, data: CreateDishRequest): Promise<Dish> {
+    const response = await this.api.put<Dish>(`/dishes/${dishId}`, data);
+    return response.data;
+  }
+
+  async deleteDish(dishId: number): Promise<void> {
+    await this.api.delete(`/dishes/${dishId}`);
+  }
+
   // Reviews
   async getRestaurantReviews(restaurantId: number): Promise<Review[]> {
     const response = await this.api.get<Review[]>(`/restaurants/${restaurantId}/reviews`);
