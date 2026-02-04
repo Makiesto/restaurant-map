@@ -43,7 +43,7 @@ public class UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .role(Role.USER)
+                .role(Role.VERIFIED_USER) // TODO In future add some mechanism to verify users
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .build();

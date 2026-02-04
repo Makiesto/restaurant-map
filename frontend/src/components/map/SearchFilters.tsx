@@ -43,10 +43,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFilterChange, restauran
 
   const priceRanges = [
     { value: '', label: 'Any Price' },
-    { value: 'budget', label: '$ Budget' },
-    { value: 'moderate', label: '$$ Moderate' },
-    { value: 'expensive', label: '$$$ Expensive' },
-    { value: 'luxury', label: '$$$$ Luxury' },
+    { value: 'BUDGET', label: '$ Budget' },
+    { value: 'MODERATE', label: '$$ Moderate' },
+    { value: 'EXPENSIVE', label: '$$$ Expensive' },
+    { value: 'LUXURY', label: '$$$$ Luxury' },
   ];
 
   const dietaryOptionsList = [

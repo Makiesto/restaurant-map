@@ -6,11 +6,10 @@ import axios from "axios";
 
 interface RestaurantFormProps {
     restaurant: Restaurant | null;
-    onSuccess: () => void;
-    onCancel: () => void;
+    onClose: (success: boolean) => void;
 }
 
-const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onSuccess, onCancel}) => {
+const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) => {
     const isEditing = !!restaurant;
 
     const [formData, setFormData] = useState<CreateRestaurantRequest>({
@@ -103,7 +102,7 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onSuccess, o
             } else {
                 await apiService.createRestaurant(formData);
             }
-            onSuccess();
+            onClose(true);
         } catch (err: unknown) {
             let errorMessage = 'Failed to save restaurant';
 
@@ -180,10 +179,10 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onSuccess, o
                         disabled={submitting}
                     >
                         <option value="">Select price...</option>
-                        <option value="budget">$ Budget</option>
-                        <option value="moderate">$$ Moderate</option>
-                        <option value="expensive">$$$ Expensive</option>
-                        <option value="luxury">$$$$ Luxury</option>
+                        <option value="BUDGET">$ Budget</option>
+                        <option value="MODERATE">$$ Moderate</option>
+                        <option value="EXPENSIVE">$$$ Expensive</option>
+                        <option value="LUXURY">$$$$ Luxury</option>
                     </select>
                 </div>
             </div>
@@ -247,7 +246,7 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onSuccess, o
             <div className="modal-actions">
                 <button
                     type="button"
-                    onClick={onCancel}
+                    onClick={() => onClose(false)}
                     className="btn-cancel"
                     disabled={submitting}
                 >

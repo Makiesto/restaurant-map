@@ -16,7 +16,7 @@ export interface Restaurant {
     email: string;
   };
   cuisineType?: string;
-  priceRange?: 'budget' | 'moderate' | 'expensive' | 'luxury';
+  priceRange?: 'BUDGET' | 'MODERATE' | 'EXPENSIVE' | 'LUXURY';
   dietaryOptions?: string[];
   createdAt: string;
   updatedAt: string;
