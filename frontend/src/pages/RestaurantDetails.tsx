@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { Restaurant } from '../types/restaurant.types';
 import type { Dish } from '../types/dish.types';
-import ReviewSection from '../components/ReviewSection';
+import ReviewSection from '../components/restaurants/ReviewSection.tsx';
 import './RestaurantDetails.css';
 
 const RestaurantDetails: React.FC = () => {

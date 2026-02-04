@@ -2,7 +2,10 @@ export interface Review {
   id: number;
   restaurantId: number;
   restaurantName: string;
-  userId: number;
+  user: {
+    id: number;
+    username: string;
+  };
   userName: string;
   rating: number;
   comment?: string;

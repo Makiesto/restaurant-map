@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {useAuth} from '../context/AuthContext';
-import {apiService} from '../services/api';
-import type {Review, ReviewStats, CreateReviewRequest} from '../types/review.types';
+import {useAuth} from '../../context/AuthContext.tsx';
+import {apiService} from '../../services/api.ts';
+import type {Review, ReviewStats, CreateReviewRequest} from '../../types/review.types.ts';
 import './ReviewSection.css';
 import axios from "axios";
 

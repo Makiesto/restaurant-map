@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Restaurant } from '../types/restaurant.types';
+import type { Restaurant } from '../../types/restaurant.types.ts';
 import './DashboardStats.css';
 
 interface DashboardStatsProps {

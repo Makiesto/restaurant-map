@@ -1,14 +1,15 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar';
+import ProtectedRoute from './components/common/ProtectedRoute.tsx';
+import Navbar from './components/common/Navbar.tsx';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Map from './components/Map';
+import Map from './components/map/Map.tsx';
 import Dashboard from './pages/Dashboard';
 import RestaurantManagement from './pages/RestaurantManagement';
 import RestaurantDetails from './pages/RestaurantDetails';
+import AdminPanel from './pages/AdminPanel';
 import './App.css';
 
 const App: React.FC = () => {
@@ -37,6 +38,15 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <RestaurantManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPanel />
                 </ProtectedRoute>
               }
             />

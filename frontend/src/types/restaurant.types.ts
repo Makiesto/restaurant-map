@@ -9,8 +9,11 @@ export interface Restaurant {
   openingHours?: string;
   rating?: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  ownerId: number;
-  ownerName: string;
+  owner: {
+    id: number;
+    username: string;
+    email?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

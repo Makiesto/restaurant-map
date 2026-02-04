@@ -4,8 +4,8 @@ import {useAuth} from '../context/AuthContext';
 import {apiService} from '../services/api';
 import type {Restaurant} from '../types/restaurant.types';
 import type {Dish} from '../types/dish.types';
-import RestaurantForm from '../components/RestaurantForm';
-import DishForm from '../components/DishForm';
+import RestaurantForm from '../components/forms/RestaurantForm.tsx';
+import DishForm from '../components/forms/DishForm.tsx';
 import './Dashboard.css';
 import axios from "axios";
 

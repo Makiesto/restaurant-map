@@ -2,18 +2,20 @@
   min-height: calc(100vh - 64px);
   background: #f7fafc;
   padding-bottom: 40px;
+  width: 100%;
 }
 
 /* Page Header */
 .page-header {
   background: white;
   border-bottom: 1px solid #e2e8f0;
-  padding: 24px 40px;
+  padding: 28px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 24px;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .btn-back {
@@ -135,15 +137,34 @@
 
 /* Dishes Container */
 .dishes-container {
-  padding: 32px 40px;
+  margin: 0 auto;
+  padding: 40px 40px;
+}
+
+@media (min-width: 1400px) {
+  .dishes-container {
+    padding: 48px 60px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .dishes-container {
+    padding: 56px 80px;
+  }
 }
 
 .dishes-header {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+}
+
+@media (min-width: 1400px) {
+  .dishes-header h2 {
+    font-size: 32px !important;
+  }
 }
 
 .dishes-header h2 {
-  font-size: 24px;
+  font-size: 28px;
   color: #1a202c;
   margin: 0;
   font-weight: 600;
@@ -152,8 +173,29 @@
 /* Dishes Grid */
 .dishes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 28px;
+}
+
+@media (min-width: 1400px) {
+  .dishes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 32px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .dishes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 36px;
+  }
+}
+
+@media (min-width: 2200px) {
+  .dishes-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 40px;
+  }
 }
 
 .dish-card {
@@ -163,11 +205,13 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
   border: 2px solid transparent;
+  height: fit-content;
 }
 
 .dish-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  border-color: #667eea;
 }
 
 .dish-card.unavailable {
@@ -178,7 +222,7 @@
 .dish-image {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 220px;
   background: #edf2f7;
 }
 
@@ -203,34 +247,35 @@
 .unavailable-overlay span {
   background: #fc8181;
   color: white;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 20px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .dish-content {
-  padding: 20px;
+  padding: 24px;
 }
 
 .dish-header {
   display: flex;
   justify-content: space-between;
   align-items: start;
-  margin-bottom: 12px;
-  gap: 12px;
+  margin-bottom: 16px;
+  gap: 16px;
 }
 
 .dish-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   color: #1a202c;
   font-weight: 600;
   flex: 1;
+  line-height: 1.3;
 }
 
 .dish-price {
-  font-size: 20px;
+  font-size: 22px;
   color: #667eea;
   font-weight: 700;
   white-space: nowrap;
@@ -238,7 +283,7 @@
 
 .dish-description {
   color: #4a5568;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   margin: 0 0 16px 0;
 }
@@ -247,15 +292,15 @@
 .nutrition-info {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px 0;
-  margin-bottom: 16px;
+  gap: 14px;
+  padding: 16px 0;
+  margin-bottom: 20px;
   border-top: 1px solid #e2e8f0;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .nutrition-item {
-  font-size: 13px;
+  font-size: 14px;
   color: #718096;
 }
 
@@ -269,14 +314,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .btn-toggle {
   flex: 1;
-  padding: 10px 16px;
+  padding: 12px 18px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -305,17 +350,17 @@
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .btn-edit-dish,
 .btn-delete-dish {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -328,6 +373,7 @@
 
 .btn-edit-dish:hover {
   background: #e2e8f0;
+  transform: scale(1.05);
 }
 
 .btn-delete-dish {
@@ -336,6 +382,7 @@
 
 .btn-delete-dish:hover {
   background: #fc8181;
+  transform: scale(1.05);
 }
 
 /* Modal Styles */

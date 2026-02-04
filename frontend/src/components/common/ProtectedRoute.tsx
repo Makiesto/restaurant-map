@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -56,7 +56,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         }}>
           <h1>Access Denied</h1>
           <p>You don't have permission to access this page.</p>
-          <a href="/" style={{ color: '#667eea' }}>Go to Home</a>
+          <a href="/public" style={{ color: '#667eea' }}>Go to Home</a>
         </div>
       );
     }

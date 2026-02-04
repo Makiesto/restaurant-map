@@ -1,52 +1,44 @@
 import React, {useState, useEffect} from 'react';
-import {apiService} from '../services/api';
-import type {Dish, CreateDishRequest} from '../types/dish.types';
-import './ModalForm.css';
+import {apiService} from '../../services/api.ts';
+import type {Restaurant, CreateRestaurantRequest} from '../../types/restaurant.types.ts';
+import '../common/ModalForm.css';
 import axios from "axios";
 
-interface DishFormProps {
-    dish: Dish | null;
-    restaurantId: number;
+interface RestaurantFormProps {
+    restaurant: Restaurant | null;
     onClose: (success: boolean) => void | Promise<void>;
 }
 
-const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
-    const isEditing = !!dish;
+const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) => {
+    const isEditing = !!restaurant;
 
-    const [formData, setFormData] = useState<CreateDishRequest>({
+    const [formData, setFormData] = useState<CreateRestaurantRequest>({
         name: '',
+        address: '',
+        phone: '',
         description: '',
-        price: 0,
-        imageUrl: '',
-        isAvailable: true,
-        components: [],
+        openingHours: '',
     });
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        if (dish) {
+        if (restaurant) {
             setFormData({
-                name: dish.name,
-                description: dish.description || '',
-                price: dish.price,
-                isAvailable: dish.isAvailable,
-                imageUrl: dish.imageUrl || '',
-                components: dish.components?.map(c => ({
-                    componentId: c.componentId,
-                    amount: c.amount,
-                    isOptional: c.isOptional,
-                })) || [],
+                name: restaurant.name,
+                address: restaurant.address,
+                phone: restaurant.phone || '',
+                description: restaurant.description || '',
+                openingHours: restaurant.openingHours || '',
             });
         }
-    }, [dish]);
+    }, [restaurant]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
         setFormData({
             ...formData,
-            [e.target.name]: value,
+            [e.target.name]: e.target.value,
         });
         // Clear error for this field
         if (errors[e.target.name]) {
@@ -58,11 +50,11 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
         const newErrors: { [key: string]: string } = {};
 
         if (!formData.name.trim()) {
-            newErrors.name = 'Dish name is required';
+            newErrors.name = 'Restaurant name is required';
         }
 
-        if (!formData.price || formData.price <= 0) {
-            newErrors.price = 'Price must be greater than 0';
+        if (!formData.address.trim()) {
+            newErrors.address = 'Address is required';
         }
 
         setErrors(newErrors);
@@ -79,14 +71,14 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
         setSubmitting(true);
 
         try {
-            if (isEditing && dish) {
-                await apiService.updateDish(dish.id, formData);
+            if (isEditing && restaurant) {
+                await apiService.updateRestaurant(restaurant.id, formData);
             } else {
-                await apiService.createDish(restaurantId, formData);
+                await apiService.createRestaurant(formData);
             }
             onClose(true);
         } catch (err: unknown) {
-            let errorMessage = 'Failed to save dish';
+            let errorMessage = 'Failed to save restaurant';
 
             if (axios.isAxiosError(err)) {
                 errorMessage = err.response?.data?.message || err.message || errorMessage;
@@ -108,7 +100,7 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
             )}
 
             <div className="form-group">
-                <label htmlFor="name">Dish Name *</label>
+                <label htmlFor="name">Restaurant Name *</label>
                 <input
                     type="text"
                     id="name"
@@ -116,25 +108,49 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
                     value={formData.name}
                     onChange={handleChange}
                     disabled={submitting}
-                    placeholder="e.g., Margherita Pizza"
+                    placeholder="e.g., Joe's Pizza"
                 />
                 {errors.name && <span className="field-error">{errors.name}</span>}
             </div>
 
             <div className="form-group">
-                <label htmlFor="price">Price *</label>
+                <label htmlFor="address">Address *</label>
                 <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    value={formData.price}
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={formData.address}
                     onChange={handleChange}
                     disabled={submitting}
-                    placeholder="e.g., 12.99"
-                    step="0.01"
-                    min="0"
+                    placeholder="e.g., 123 Main St, Kraków, Poland"
                 />
-                {errors.price && <span className="field-error">{errors.price}</span>}
+                {errors.address && <span className="field-error">{errors.address}</span>}
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="phone">Phone Number</label>
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    disabled={submitting}
+                    placeholder="e.g., +48 123 456 789"
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="openingHours">Opening Hours</label>
+                <input
+                    type="text"
+                    id="openingHours"
+                    name="openingHours"
+                    value={formData.openingHours}
+                    onChange={handleChange}
+                    disabled={submitting}
+                    placeholder="e.g., Mon-Fri: 9:00-22:00, Sat-Sun: 10:00-23:00"
+                />
             </div>
 
             <div className="form-group">
@@ -145,30 +161,9 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
                     value={formData.description}
                     onChange={handleChange}
                     disabled={submitting}
-                    placeholder="Describe the dish, ingredients, etc."
-                    rows={3}
+                    placeholder="Tell customers about your restaurant..."
+                    rows={4}
                 />
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="imageUrl">Image URL</label>
-                <input
-                    type="url"
-                    id="imageUrl"
-                    name="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={handleChange}
-                    disabled={submitting}
-                    placeholder="https://example.com/image.jpg"
-                />
-                <small className="help-text">
-                    Optional: Add a link to an image of your dish
-                </small>
-            </div>
-
-            <div className="info-box">
-                <strong>📝 Note:</strong> Nutritional information and components can be added later.
-                For now, focus on the basic details to get your dish listed!
             </div>
 
             <div className="modal-actions">
@@ -185,11 +180,11 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
                     className="btn-submit"
                     disabled={submitting}
                 >
-                    {submitting ? 'Saving...' : isEditing ? 'Update Dish' : 'Add Dish'}
+                    {submitting ? 'Saving...' : isEditing ? 'Update Restaurant' : 'Add Restaurant'}
                 </button>
             </div>
         </form>
     );
 };
 
-export default DishForm;
+export default RestaurantForm;
