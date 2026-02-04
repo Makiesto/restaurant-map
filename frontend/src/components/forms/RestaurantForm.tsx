@@ -1,15 +1,16 @@
 import React, {useState, useEffect} from 'react';
-import {apiService} from '../../services/api.ts';
-import type {Restaurant, CreateRestaurantRequest} from '../../types/restaurant.types.ts';
+import {apiService} from '../../services/api';
+import type {Restaurant, CreateRestaurantRequest} from '../../types/restaurant.types';
 import '../common/ModalForm.css';
 import axios from "axios";
 
 interface RestaurantFormProps {
     restaurant: Restaurant | null;
-    onClose: (success: boolean) => void | Promise<void>;
+    onSuccess: () => void;
+    onCancel: () => void;
 }
 
-const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) => {
+const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onSuccess, onCancel}) => {
     const isEditing = !!restaurant;
 
     const [formData, setFormData] = useState<CreateRestaurantRequest>({
@@ -18,10 +19,22 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
         phone: '',
         description: '',
         openingHours: '',
+        cuisineType: '',
+        priceRange: '',
+        dietaryOptions: [],
     });
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [submitting, setSubmitting] = useState(false);
+
+    const cuisineTypes = [
+        'Italian', 'Chinese', 'Japanese', 'Mexican', 'Indian',
+        'Thai', 'French', 'American', 'Mediterranean', 'Polish', 'Other'
+    ];
+
+    const dietaryOptionsList = [
+        'Vegetarian', 'Vegan', 'Gluten-Free', 'Halal', 'Kosher', 'Dairy-Free'
+    ];
 
     useEffect(() => {
         if (restaurant) {
@@ -31,11 +44,14 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
                 phone: restaurant.phone || '',
                 description: restaurant.description || '',
                 openingHours: restaurant.openingHours || '',
+                cuisineType: restaurant.cuisineType || '',
+                priceRange: restaurant.priceRange || '',
+                dietaryOptions: restaurant.dietaryOptions || [],
             });
         }
     }, [restaurant]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
@@ -44,6 +60,17 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
         if (errors[e.target.name]) {
             setErrors({...errors, [e.target.name]: ''});
         }
+    };
+
+    const handleDietaryToggle = (option: string) => {
+        const newOptions = formData.dietaryOptions?.includes(option)
+            ? formData.dietaryOptions.filter(o => o !== option)
+            : [...(formData.dietaryOptions || []), option];
+
+        setFormData({
+            ...formData,
+            dietaryOptions: newOptions,
+        });
     };
 
     const validate = (): boolean => {
@@ -76,7 +103,7 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
             } else {
                 await apiService.createRestaurant(formData);
             }
-            onClose(true);
+            onSuccess();
         } catch (err: unknown) {
             let errorMessage = 'Failed to save restaurant';
 
@@ -87,7 +114,6 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
             }
 
             setErrors({general: errorMessage});
-            console.error('Submission error:', err);
         } finally {
             setSubmitting(false);
         }
@@ -127,6 +153,41 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
                 {errors.address && <span className="field-error">{errors.address}</span>}
             </div>
 
+            <div className="form-row">
+                <div className="form-group">
+                    <label htmlFor="cuisineType">Cuisine Type</label>
+                    <select
+                        id="cuisineType"
+                        name="cuisineType"
+                        value={formData.cuisineType}
+                        onChange={handleChange}
+                        disabled={submitting}
+                    >
+                        <option value="">Select cuisine...</option>
+                        {cuisineTypes.map(type => (
+                            <option key={type} value={type}>{type}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="priceRange">Price Range</label>
+                    <select
+                        id="priceRange"
+                        name="priceRange"
+                        value={formData.priceRange}
+                        onChange={handleChange}
+                        disabled={submitting}
+                    >
+                        <option value="">Select price...</option>
+                        <option value="budget">$ Budget</option>
+                        <option value="moderate">$$ Moderate</option>
+                        <option value="expensive">$$$ Expensive</option>
+                        <option value="luxury">$$$$ Luxury</option>
+                    </select>
+                </div>
+            </div>
+
             <div className="form-group">
                 <label htmlFor="phone">Phone Number</label>
                 <input
@@ -154,6 +215,23 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
             </div>
 
             <div className="form-group">
+                <label>Dietary Options</label>
+                <div className="dietary-checkboxes">
+                    {dietaryOptionsList.map(option => (
+                        <label key={option} className="checkbox-label-inline">
+                            <input
+                                type="checkbox"
+                                checked={formData.dietaryOptions?.includes(option)}
+                                onChange={() => handleDietaryToggle(option)}
+                                disabled={submitting}
+                            />
+                            <span>{option}</span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+
+            <div className="form-group">
                 <label htmlFor="description">Description</label>
                 <textarea
                     id="description"
@@ -169,7 +247,7 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
             <div className="modal-actions">
                 <button
                     type="button"
-                    onClick={() => onClose(false)}
+                    onClick={onCancel}
                     className="btn-cancel"
                     disabled={submitting}
                 >

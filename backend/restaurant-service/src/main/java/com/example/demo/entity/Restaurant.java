@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "restaurants")
@@ -52,7 +54,25 @@ public class Restaurant {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    private RestaurantStatus status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RestaurantStatus status = RestaurantStatus.PENDING;
+
+    @Column(length = 50)
+    private String cuisineType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private PriceRange priceRange;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "restaurant_dietary_options",
+            joinColumns = @JoinColumn(name = "restaurant_id")
+    )
+    @Column(name = "dietary_option")
+    private Set<String> dietaryOptions = new HashSet<>();
+
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Dish> dishes = new ArrayList<>();
@@ -66,5 +86,17 @@ public class Restaurant {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public void addDietaryOption(String option) {
+        this.dietaryOptions.add(option);
+    }
+
+    public void removeDietaryOption(String option) {
+        this.dietaryOptions.remove(option);
+    }
+
+    public void clearDietaryOptions() {
+        this.dietaryOptions.clear();
     }
 }

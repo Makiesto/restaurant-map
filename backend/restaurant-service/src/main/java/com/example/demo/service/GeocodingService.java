@@ -1,6 +1,8 @@
 package com.example.demo.service;
 
 import com.example.demo.exception.GeocodingException;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -51,10 +53,10 @@ public class GeocodingService {
 
             // Call API
             ResponseEntity<List> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                List.class
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    List.class
             );
 
             List<Map<String, Object>> results = response.getBody();
@@ -72,7 +74,7 @@ public class GeocodingService {
             String displayName = location.get("display_name").toString();
 
             log.info("Geocoded address: {} -> lat={}, lon={}, full name: {}",
-                     address, latitude, longitude, displayName);
+                    address, latitude, longitude, displayName);
 
             return new GeocodingResult(latitude, longitude, displayName);
 
@@ -106,6 +108,22 @@ public class GeocodingService {
         lastRequestTime = System.currentTimeMillis();
     }
 
+    public double calculateDistance(Coordinates from, Coordinates to) {
+        final int EARTH_RADIUS_KM = 6371;
+
+        double dLat = Math.toRadians(to.getLatitude() - from.getLatitude());
+        double dLon = Math.toRadians(to.getLongitude() - from.getLongitude());
+
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(from.getLatitude())) *
+                        Math.cos(Math.toRadians(to.getLatitude())) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return EARTH_RADIUS_KM * c;
+    }
+
     /**
      * Result class holding geocoding data
      */
@@ -121,5 +139,12 @@ public class GeocodingService {
             this.displayName = displayName;
         }
 
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class Coordinates {
+        private double latitude;
+        private double longitude;
     }
 }

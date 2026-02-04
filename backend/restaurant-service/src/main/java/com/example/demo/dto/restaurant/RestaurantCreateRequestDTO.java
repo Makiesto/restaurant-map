@@ -2,7 +2,10 @@ package com.example.demo.dto.restaurant;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.Set;
 
 @Data
 public class RestaurantCreateRequestDTO {
@@ -13,13 +16,17 @@ public class RestaurantCreateRequestDTO {
     @NotBlank(message = "Address is required")
     private String address;
 
-    private Double latitude;
-
-    private Double longitude;
-
     private String phone;
+
+    private String openingHours;
 
     private String description;
 
-    private String openingHours;
+    private String imageUrl;
+
+    private String cuisineType;
+
+    private String priceRange;
+
+    private Set<String> dietaryOptions;
 }

@@ -3,10 +3,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.restaurant.RestaurantCreateRequestDTO;
 import com.example.demo.dto.restaurant.RestaurantResponseDTO;
-import com.example.demo.entity.Restaurant;
-import com.example.demo.entity.RestaurantStatus;
-import com.example.demo.entity.Role;
-import com.example.demo.entity.User;
+import com.example.demo.entity.*;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.repository.RestaurantRepository;
@@ -62,6 +59,9 @@ public class RestaurantService {
                 .status(RestaurantStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .cuisineType(request.getCuisineType())
+                .dietaryOptions(request.getDietaryOptions())
+                .priceRange(PriceRange.valueOf(request.getPriceRange()))
                 .build();
 
         Restaurant savedRestaurant = restaurantRepository.save(restaurant);
@@ -142,22 +142,33 @@ public class RestaurantService {
             throw new UnauthorizedException("You can only update your own restaurants");
         }
 
-        GeocodingService.GeocodingResult coordinates =
-                geocodingService.geocodeAddress(request.getAddress());
-
         restaurant.setName(request.getName());
         restaurant.setAddress(request.getAddress());
-        restaurant.setLatitude(coordinates.getLatitude());
-        restaurant.setLongitude(coordinates.getLongitude());
         restaurant.setPhone(request.getPhone());
-        restaurant.setDescription(request.getDescription());
         restaurant.setOpeningHours(request.getOpeningHours());
-        restaurant.setUpdatedAt(LocalDateTime.now());
+        restaurant.setDescription(request.getDescription());
 
-        Restaurant savedRestaurant = restaurantRepository.save(restaurant);
-        log.info("Restaurant updated: {}", restaurantId);
+        // NEW FIELDS
+        restaurant.setCuisineType(request.getCuisineType());
+        restaurant.setPriceRange(PriceRange.fromString(request.getPriceRange()));
 
-        return mapToResponse(savedRestaurant);
+        // Update dietary options
+        restaurant.clearDietaryOptions();
+        if (request.getDietaryOptions() != null && !request.getDietaryOptions().isEmpty()) {
+            request.getDietaryOptions().forEach(restaurant::addDietaryOption);
+        }
+
+        // Re-geocode if address changed
+        try {
+            var coordinates = geocodingService.geocodeAddress(request.getAddress());
+            restaurant.setLatitude(coordinates.getLatitude());
+            restaurant.setLongitude(coordinates.getLongitude());
+        } catch (Exception e) {
+            // Keep existing coordinates if geocoding fails
+        }
+
+        Restaurant updated = restaurantRepository.save(restaurant);
+        return mapToResponse(updated);
     }
 
     @Transactional
@@ -177,21 +188,29 @@ public class RestaurantService {
     }
 
     private RestaurantResponseDTO mapToResponse(Restaurant restaurant) {
+        RestaurantResponseDTO.UserDTO ownerDTO = new RestaurantResponseDTO.UserDTO(
+            restaurant.getOwner().getId(),
+            restaurant.getOwner().getEmail()
+        );
+
         return RestaurantResponseDTO.builder()
-                .id(restaurant.getId())
-                .name(restaurant.getName())
-                .address(restaurant.getAddress())
-                .latitude(restaurant.getLatitude())
-                .longitude(restaurant.getLongitude())
-                .phone(restaurant.getPhone())
-                .description(restaurant.getDescription())
-                .openingHours(restaurant.getOpeningHours())
-                .rating(restaurant.getRating())
-                .status(restaurant.getStatus())
-                .ownerId(restaurant.getOwner().getId())
-                .ownerName(restaurant.getOwner().getFirstName() + " " + restaurant.getOwner().getLastName())
-                .createdAt(restaurant.getCreatedAt())
-                .updatedAt(restaurant.getUpdatedAt())
-                .build();
+            .id(restaurant.getId())
+            .name(restaurant.getName())
+            .address(restaurant.getAddress())
+            .latitude(restaurant.getLatitude())
+            .longitude(restaurant.getLongitude())
+            .phone(restaurant.getPhone())
+            .openingHours(restaurant.getOpeningHours())
+            .description(restaurant.getDescription())
+            .rating(restaurant.getRating())
+            .status(restaurant.getStatus())
+            .cuisineType(restaurant.getCuisineType())
+            .priceRange(restaurant.getPriceRange() != null ?
+                restaurant.getPriceRange().name().toLowerCase() : null)
+            .dietaryOptions(restaurant.getDietaryOptions())
+            .owner(ownerDTO)
+            .createdAt(restaurant.getCreatedAt())
+            .updatedAt(restaurant.getUpdatedAt())
+            .build();
     }
 }
