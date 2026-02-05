@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {apiService} from '../../services/api.ts';
 import type {Dish, CreateDishRequest} from '../../types/dish.types.ts';
+import ImageUploadField from './ImageUploadField';
 import '../common/ModalForm.css';
 import axios from "axios";
 
@@ -51,6 +52,16 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
         // Clear error for this field
         if (errors[e.target.name]) {
             setErrors({...errors, [e.target.name]: ''});
+        }
+    };
+
+    const handleImageChange = (url: string) => {
+        setFormData({
+            ...formData,
+            imageUrl: url,
+        });
+        if (errors.imageUrl) {
+            setErrors({...errors, imageUrl: ''});
         }
     };
 
@@ -150,21 +161,14 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
                 />
             </div>
 
-            <div className="form-group">
-                <label htmlFor="imageUrl">Image URL</label>
-                <input
-                    type="url"
-                    id="imageUrl"
-                    name="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={handleChange}
-                    disabled={submitting}
-                    placeholder="https://example.com/image.jpg"
-                />
-                <small className="help-text">
-                    Optional: Add a link to an image of your dish
-                </small>
-            </div>
+            {/* Image Upload */}
+            <ImageUploadField
+                label="Dish Image"
+                value={formData.imageUrl || ''}
+                onChange={handleImageChange}
+                folder="dishes"
+                disabled={submitting}
+            />
 
             <div className="info-box">
                 <strong>📝 Note:</strong> Nutritional information and components can be added later.

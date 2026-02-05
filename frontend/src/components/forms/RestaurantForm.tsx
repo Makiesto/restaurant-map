@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {apiService} from '../../services/api';
 import type {Restaurant, CreateRestaurantRequest} from '../../types/restaurant.types';
+import ImageUploadField from './ImageUploadField';
 import '../common/ModalForm.css';
 import axios from "axios";
 
@@ -18,6 +19,7 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
         phone: '',
         description: '',
         openingHours: '',
+        imageUrl: '',
         cuisineType: '',
         priceRange: '',
         dietaryOptions: [],
@@ -43,6 +45,7 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
                 phone: restaurant.phone || '',
                 description: restaurant.description || '',
                 openingHours: restaurant.openingHours || '',
+                imageUrl: restaurant.imageUrl || '',
                 cuisineType: restaurant.cuisineType || '',
                 priceRange: restaurant.priceRange || '',
                 dietaryOptions: restaurant.dietaryOptions || [],
@@ -58,6 +61,16 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
         // Clear error for this field
         if (errors[e.target.name]) {
             setErrors({...errors, [e.target.name]: ''});
+        }
+    };
+
+    const handleImageChange = (url: string) => {
+        setFormData({
+            ...formData,
+            imageUrl: url,
+        });
+        if (errors.imageUrl) {
+            setErrors({...errors, imageUrl: ''});
         }
     };
 
@@ -105,13 +118,11 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
             onClose(true);
         } catch (err: unknown) {
             let errorMessage = 'Failed to save restaurant';
-
             if (axios.isAxiosError(err)) {
                 errorMessage = err.response?.data?.message || err.message || errorMessage;
             } else if (err instanceof Error) {
                 errorMessage = err.message;
             }
-
             setErrors({general: errorMessage});
         } finally {
             setSubmitting(false);
@@ -151,6 +162,15 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({restaurant, onClose}) =>
                 />
                 {errors.address && <span className="field-error">{errors.address}</span>}
             </div>
+
+            {/* Image Upload */}
+            <ImageUploadField
+                label="Restaurant Image"
+                value={formData.imageUrl || ''}
+                onChange={handleImageChange}
+                folder="restaurants"
+                disabled={submitting}
+            />
 
             <div className="form-row">
                 <div className="form-group">
