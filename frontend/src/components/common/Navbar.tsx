@@ -32,7 +32,7 @@ const Navbar: React.FC = () => {
 
               {user.role === 'ADMIN' && (
                 <Link to="/admin" className="navbar-link admin-link">
-                  👑 Admin Panel
+                  Admin Panel
                 </Link>
               )}
 
