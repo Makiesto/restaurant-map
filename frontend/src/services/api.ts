@@ -4,6 +4,7 @@ import type { Restaurant, CreateRestaurantRequest } from '../types/restaurant.ty
 import type { Dish, CreateDishRequest } from '../types/dish.types';
 import type { Review, CreateReviewRequest, ReviewStats } from '../types/review.types';
 import type { AdminStats, VerifyRestaurantRequest } from '../types/admin.types';
+import type { Allergen } from '../types/allergen.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -190,6 +191,21 @@ class ApiService {
   async verifyUser(userId: number): Promise<User> {
     const response = await this.api.put<User>(`/admin/users/${userId}/verify`);
     return response.data;
+  }
+
+  // --- Allergens ---
+  async getAllAllergens(): Promise<Allergen[]> {
+    const response = await this.api.get<Allergen[]>('/allergens');
+    return response.data;
+  }
+
+  async getUserAllergens(): Promise<Allergen[]> {
+    const response = await this.api.get<Allergen[]>('/users/me/allergens');
+    return response.data;
+  }
+
+  async updateUserAllergens(allergenNames: string[]): Promise<void> {
+    await this.api.put('/users/me/allergens', { allergenNames });
   }
 }
 

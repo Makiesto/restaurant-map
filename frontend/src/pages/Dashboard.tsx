@@ -6,6 +6,7 @@ import type {Restaurant} from '../types/restaurant.types';
 import type {Dish} from '../types/dish.types';
 import RestaurantForm from '../components/forms/RestaurantForm.tsx';
 import DishForm from '../components/forms/DishForm.tsx';
+import AllergenManager from '../components/allergens/AllergenManager';
 import './Dashboard.css';
 import axios from "axios";
 
@@ -23,6 +24,8 @@ const Dashboard: React.FC = () => {
     const [showDishForm, setShowDishForm] = useState(false);
     const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
     const [editingDish, setEditingDish] = useState<Dish | null>(null);
+
+    const [showAllergenManager, setShowAllergenManager] = useState(false);
 
     // Check if user is admin
     const isAdmin = user?.role === 'ADMIN';
@@ -175,12 +178,21 @@ const Dashboard: React.FC = () => {
             <div className="dashboard">
                 <div className="dashboard-header">
                     <div className="header-content">
-                        <h1>My Restaurants</h1>
-                        <p className="subtitle">📋 Admin restaurant management is handled through the Admin Panel</p>
+                        <h1>Admin Dashboard</h1>
+                        <p className="subtitle">📋 Manage restaurant approvals and verifications through the Admin
+                            Panel</p>
                     </div>
-                    <button onClick={handleAddRestaurant} className="btn-add-restaurant">
-                        + Add Restaurant
-                    </button>
+                    <div className="header-actions">
+                        <button
+                            onClick={() => setShowAllergenManager(true)}
+                            className="allergen-preferences-button"
+                        >
+                            🛡️ My Allergens
+                        </button>
+                        <button onClick={handleAddRestaurant} className="btn-add-restaurant">
+                            + Add Restaurant
+                        </button>
+                    </div>
                 </div>
 
                 <div className="empty-state">
@@ -192,6 +204,15 @@ const Dashboard: React.FC = () => {
                         Go to Admin Panel
                     </button>
                 </div>
+
+                {/* Allergen Manager Modal */}
+                {showAllergenManager && (
+                    <div className="modal-overlay" onClick={() => setShowAllergenManager(false)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <AllergenManager onClose={() => setShowAllergenManager(false)}/>
+                        </div>
+                    </div>
+                )}
 
                 {/* Restaurant Form Modal for admins */}
                 {showRestaurantForm && (
@@ -212,9 +233,17 @@ const Dashboard: React.FC = () => {
                     <h1>My Restaurants</h1>
                     <p className="subtitle">Manage your restaurant listings and menus</p>
                 </div>
-                <button onClick={handleAddRestaurant} className="btn-add-restaurant">
-                    + Add Restaurant
-                </button>
+                <div className="header-actions">
+                    <button
+                        onClick={() => setShowAllergenManager(true)}
+                        className="allergen-preferences-button"
+                    >
+                        🛡️ Manage Allergens
+                    </button>
+                    <button onClick={handleAddRestaurant} className="btn-add-restaurant">
+                        + Add Restaurant
+                    </button>
+                </div>
             </div>
 
             {error && <div className="error-banner">{error}</div>}

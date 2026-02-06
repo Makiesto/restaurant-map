@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {apiService} from '../../services/api.ts';
 import type {Dish, CreateDishRequest} from '../../types/dish.types.ts';
 import ImageUploadField from './ImageUploadField';
+import DishAllergenManager from '../allergens/DishAllergenManager';
 import '../common/ModalForm.css';
 import axios from "axios";
 
@@ -21,6 +22,7 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
         imageUrl: '',
         isAvailable: true,
         components: [],
+        allergens: [],
     });
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -39,6 +41,7 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
                     amount: c.amount,
                     isOptional: c.isOptional,
                 })) || [],
+                allergens: dish.allergens || [],
             });
         }
     }, [dish]);
@@ -63,6 +66,13 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
         if (errors.imageUrl) {
             setErrors({...errors, imageUrl: ''});
         }
+    };
+
+    const handleAllergenChange = (allergens: string[]) => {
+        setFormData(prev => ({
+            ...prev,
+            allergens,
+        }));
     };
 
     const validate = (): boolean => {
@@ -168,6 +178,12 @@ const DishForm: React.FC<DishFormProps> = ({dish, restaurantId, onClose}) => {
                 onChange={handleImageChange}
                 folder="dishes"
                 disabled={submitting}
+            />
+
+            {/* Allergen Manager */}
+            <DishAllergenManager
+                selectedAllergens={formData.allergens}
+                onChange={handleAllergenChange}
             />
 
             <div className="info-box">

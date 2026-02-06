@@ -1,0 +1,101 @@
+/* Allergen Badges Container */
+.allergen-badges-container {
+  margin: 16px 0;
+}
+
+.allergen-badges-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a5568;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Badges */
+.allergen-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.allergen-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f7fafc;
+  color: #4a5568;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.allergen-badge.user-allergen {
+  background: linear-gradient(135deg, #fed7d7 0%, #fc8181 100%);
+  border-color: #f56565;
+  color: #742a2a;
+  font-weight: 700;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(252, 129, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(252, 129, 129, 0);
+  }
+}
+
+.badge-warning-icon {
+  font-size: 14px;
+  line-height: 1;
+  animation: shake-icon 0.5s ease-in-out;
+}
+
+@keyframes shake-icon {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}
+
+/* User Warning */
+.allergen-user-warning {
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: #fed7d7;
+  border: 2px solid #fc8181;
+  border-radius: 8px;
+  color: #c53030;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  animation: pulse-warning-banner 2s ease-in-out infinite;
+}
+
+@keyframes pulse-warning-banner {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(252, 129, 129, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(252, 129, 129, 0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .allergen-badge {
+    font-size: 12px;
+    padding: 5px 12px;
+  }
+
+  .allergen-user-warning {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+}

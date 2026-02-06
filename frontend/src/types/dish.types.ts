@@ -33,4 +33,5 @@ export interface CreateDishRequest {
         amount: number;
         isOptional: boolean;
     }[];
+    allergens: string[];
 }
