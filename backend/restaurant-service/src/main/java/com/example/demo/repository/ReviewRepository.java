@@ -19,4 +19,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     boolean existsByRestaurantIdAndUserId(Long restaurantId, Long userId);
 
     Double getAverageRatingByRestaurantId(Long restaurantId);
+
+    Long countByIsVerified(Boolean isVerified);
+
 }

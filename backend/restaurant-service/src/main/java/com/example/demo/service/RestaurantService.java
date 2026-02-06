@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-
+import com.example.demo.dto.admin.VerifyRestaurantRequestDTO;
 import com.example.demo.dto.restaurant.RestaurantCreateRequestDTO;
 import com.example.demo.dto.restaurant.RestaurantResponseDTO;
 import com.example.demo.entity.*;
@@ -8,6 +8,7 @@ import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.repository.RestaurantRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,22 +26,18 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
     private final GeocodingService geocodingService;
+    private final SecurityUtil securityUtil;
 
     @Transactional
     public RestaurantResponseDTO createRestaurant(RestaurantCreateRequestDTO request, Long ownerId) {
         log.info("Creating restaurant: {} for user: {}", request.getName(), ownerId);
 
-        // Verify user exists and is verified
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + ownerId));
 
         if (owner.getRole() != Role.VERIFIED_USER && owner.getRole() != Role.ADMIN) {
             throw new UnauthorizedException("Only verified users can create restaurants");
         }
-
-        // TODO
-//        GeocodingService.GeocodingResult coordinates =
-//                geocodingService.geocodeAddress(request.getAddress());
 
         Double latitude = 50.061698;
         Double longitude = 19.937206;
@@ -50,13 +47,12 @@ public class RestaurantService {
                 .address(request.getAddress())
                 .latitude(latitude)
                 .longitude(longitude)
-//                .latitude(coordinates.getLatitude())
-//                .longitude(coordinates.getLongitude())
                 .phone(request.getPhone())
                 .description(request.getDescription())
                 .openingHours(request.getOpeningHours())
                 .owner(owner)
                 .status(RestaurantStatus.PENDING)
+                .isVerified(false)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .cuisineType(request.getCuisineType())
@@ -87,6 +83,13 @@ public class RestaurantService {
     @Transactional(readOnly = true)
     public List<RestaurantResponseDTO> getPendingRestaurants() {
         return restaurantRepository.findByStatus(RestaurantStatus.PENDING).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<RestaurantResponseDTO> getUnverifiedRestaurants() {
+        return restaurantRepository.findByStatusAndIsVerified(RestaurantStatus.APPROVED, false).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -131,13 +134,54 @@ public class RestaurantService {
     }
 
     @Transactional
+    public RestaurantResponseDTO verifyRestaurant(Long restaurantId, VerifyRestaurantRequestDTO request) {
+        log.info("Verifying restaurant with ID: {}", restaurantId);
+
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with ID: " + restaurantId));
+
+        User currentAdmin = securityUtil.getCurrentUser();
+
+        restaurant.setIsVerified(true);
+        restaurant.setVerifiedAt(LocalDateTime.now());
+        restaurant.setVerifiedBy(currentAdmin);
+        if (request != null && request.getNotes() != null) {
+            restaurant.setVerificationNotes(request.getNotes());
+        }
+        restaurant.setUpdatedAt(LocalDateTime.now());
+
+        Restaurant savedRestaurant = restaurantRepository.save(restaurant);
+        log.info("Restaurant verified: {} by admin: {}", restaurantId, currentAdmin.getEmail());
+
+        return mapToResponse(savedRestaurant);
+    }
+
+    @Transactional
+    public RestaurantResponseDTO unverifyRestaurant(Long restaurantId) {
+        log.info("Unverifying restaurant with ID: {}", restaurantId);
+
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with ID: " + restaurantId));
+
+        restaurant.setIsVerified(false);
+        restaurant.setVerifiedAt(null);
+        restaurant.setVerifiedBy(null);
+        restaurant.setVerificationNotes(null);
+        restaurant.setUpdatedAt(LocalDateTime.now());
+
+        Restaurant savedRestaurant = restaurantRepository.save(restaurant);
+        log.info("Restaurant unverified: {}", restaurantId);
+
+        return mapToResponse(savedRestaurant);
+    }
+
+    @Transactional
     public RestaurantResponseDTO updateRestaurant(Long restaurantId, RestaurantCreateRequestDTO request, Long userId) {
         log.info("Updating restaurant: {} by user: {}", restaurantId, userId);
 
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with ID: " + restaurantId));
 
-        // Check if user is the owner
         if (!restaurant.getOwner().getId().equals(userId)) {
             throw new UnauthorizedException("You can only update your own restaurants");
         }
@@ -148,17 +192,14 @@ public class RestaurantService {
         restaurant.setOpeningHours(request.getOpeningHours());
         restaurant.setDescription(request.getDescription());
 
-        // NEW FIELDS
         restaurant.setCuisineType(request.getCuisineType());
         restaurant.setPriceRange(PriceRange.fromString(request.getPriceRange()));
 
-        // Update dietary options
         restaurant.clearDietaryOptions();
         if (request.getDietaryOptions() != null && !request.getDietaryOptions().isEmpty()) {
             request.getDietaryOptions().forEach(restaurant::addDietaryOption);
         }
 
-        // Re-geocode if address changed
         try {
             var coordinates = geocodingService.geocodeAddress(request.getAddress());
             restaurant.setLatitude(coordinates.getLatitude());
@@ -178,7 +219,6 @@ public class RestaurantService {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with ID: " + restaurantId));
 
-        // Check if user is the owner
         if (!restaurant.getOwner().getId().equals(userId)) {
             throw new UnauthorizedException("You can only delete your own restaurants");
         }
@@ -190,6 +230,8 @@ public class RestaurantService {
     private RestaurantResponseDTO mapToResponse(Restaurant restaurant) {
         RestaurantResponseDTO.UserDTO ownerDTO = new RestaurantResponseDTO.UserDTO(
             restaurant.getOwner().getId(),
+            restaurant.getOwner().getFirstName(),
+            restaurant.getOwner().getLastName(),
             restaurant.getOwner().getEmail()
         );
 
@@ -204,6 +246,8 @@ public class RestaurantService {
             .description(restaurant.getDescription())
             .rating(restaurant.getRating())
             .status(restaurant.getStatus())
+            .isVerified(restaurant.getIsVerified())
+            .verifiedAt(restaurant.getVerifiedAt())
             .cuisineType(restaurant.getCuisineType())
             .priceRange(restaurant.getPriceRange() != null ?
                 restaurant.getPriceRange().name().toLowerCase() : null)

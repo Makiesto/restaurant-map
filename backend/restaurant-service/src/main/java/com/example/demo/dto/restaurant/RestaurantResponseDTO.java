@@ -25,6 +25,8 @@ public class RestaurantResponseDTO {
     private String description;
     private String imageUrl;
     private Double rating;
+    private boolean isVerified;
+    private LocalDateTime verifiedAt;
     private RestaurantStatus status;
     private String cuisineType;
     private String priceRange;
@@ -39,6 +41,8 @@ public class RestaurantResponseDTO {
     @AllArgsConstructor
     public static class UserDTO {
         private Long id;
+        private String firstName;
+        private String lastName;
         private String email;
     }
 }

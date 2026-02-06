@@ -10,9 +10,15 @@ export interface Restaurant {
   imageUrl?: string;
   rating?: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+
+  // Verification fields
+  isVerified: boolean;
+  verifiedAt?: string;
+
   owner: {
     id: number;
-    username: string;
+    firstName: string;
+    lastName: string;
     email: string;
   };
   cuisineType?: string;

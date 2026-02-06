@@ -58,6 +58,20 @@ public class Restaurant {
     @Column(nullable = false)
     private RestaurantStatus status = RestaurantStatus.PENDING;
 
+    @Column(name = "is_verified", nullable = false)
+    @Builder.Default
+    private Boolean isVerified = false;
+
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by")
+    private User verifiedBy;
+
+    @Column(name = "verification_notes", columnDefinition = "TEXT")
+    private String verificationNotes;
+
     @Column(length = 50)
     private String cuisineType;
 
@@ -72,7 +86,6 @@ public class Restaurant {
     )
     @Column(name = "dietary_option")
     private Set<String> dietaryOptions = new HashSet<>();
-
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Dish> dishes = new ArrayList<>();
