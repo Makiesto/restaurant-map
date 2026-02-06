@@ -35,8 +35,9 @@ public class RestaurantService {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + ownerId));
 
+        // Allow both VERIFIED_USER and ADMIN to create restaurants
         if (owner.getRole() != Role.VERIFIED_USER && owner.getRole() != Role.ADMIN) {
-            throw new UnauthorizedException("Only verified users can create restaurants");
+            throw new UnauthorizedException("Only verified users and admins can create restaurants");
         }
 
         Double latitude = 50.061698;

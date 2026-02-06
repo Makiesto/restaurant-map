@@ -42,7 +42,6 @@ const AdminPanel: React.FC = () => {
           <p className="header-subtitle">Manage restaurants, users, and reviews</p>
         </div>
         <div className="admin-badge">
-          <span className="badge-icon">👑</span>
           <span className="badge-text">Administrator</span>
         </div>
       </div>

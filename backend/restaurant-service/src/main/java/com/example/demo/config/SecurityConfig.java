@@ -46,7 +46,7 @@ public class SecurityConfig {
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // Verified user endpoints
+                        // Verified user endpoints (admins can also do these)
                         .requestMatchers(HttpMethod.POST, "/api/restaurants").hasAnyRole("VERIFIED_USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/restaurants/*").hasAnyRole("VERIFIED_USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/restaurants/*").hasAnyRole("VERIFIED_USER", "ADMIN")

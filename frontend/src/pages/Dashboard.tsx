@@ -10,7 +10,7 @@ import './Dashboard.css';
 import axios from "axios";
 
 const Dashboard: React.FC = () => {
-    useAuth();
+    const {user} = useAuth();
     const navigate = useNavigate();
 
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -23,6 +23,9 @@ const Dashboard: React.FC = () => {
     const [showDishForm, setShowDishForm] = useState(false);
     const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
     const [editingDish, setEditingDish] = useState<Dish | null>(null);
+
+    // Check if user is admin
+    const isAdmin = user?.role === 'ADMIN';
 
     useEffect(() => {
         fetchMyRestaurants();
@@ -38,9 +41,13 @@ const Dashboard: React.FC = () => {
         try {
             setLoading(true);
             const data = await apiService.getMyRestaurants();
-            setRestaurants(data);
-            if (data.length > 0 && !selectedRestaurant) {
-                setSelectedRestaurant(data[0]);
+
+            // Filter out admin's own restaurants from dashboard view
+            const filteredRestaurants = isAdmin ? [] : data;
+
+            setRestaurants(filteredRestaurants);
+            if (filteredRestaurants.length > 0 && !selectedRestaurant) {
+                setSelectedRestaurant(filteredRestaurants[0]);
             }
         } catch (err) {
             setError('Failed to load restaurants');
@@ -93,7 +100,12 @@ const Dashboard: React.FC = () => {
         setShowRestaurantForm(false);
         setEditingRestaurant(null);
         if (success) {
-            await fetchMyRestaurants();
+            if (isAdmin) {
+                // For admins, show success message but don't show in dashboard
+                alert('✅ Restaurant created successfully! It will be reviewed by the admin team.');
+            } else {
+                await fetchMyRestaurants();
+            }
         }
     };
 
@@ -157,6 +169,42 @@ const Dashboard: React.FC = () => {
         );
     }
 
+    // Show empty state for admins (restaurants not shown)
+    if (isAdmin) {
+        return (
+            <div className="dashboard">
+                <div className="dashboard-header">
+                    <div className="header-content">
+                        <h1>My Restaurants</h1>
+                        <p className="subtitle">📋 Admin restaurant management is handled through the Admin Panel</p>
+                    </div>
+                    <button onClick={handleAddRestaurant} className="btn-add-restaurant">
+                        + Add Restaurant
+                    </button>
+                </div>
+
+                <div className="empty-state">
+                    <div className="empty-icon"></div>
+                    <h2>Admin Dashboard</h2>
+                    <p>Restaurants created by admins are not displayed here.</p>
+                    <p>To manage restaurant approvals and verifications, use the Admin Panel.</p>
+                    <button onClick={() => navigate('/admin')} className="btn-primary-large">
+                        Go to Admin Panel
+                    </button>
+                </div>
+
+                {/* Restaurant Form Modal for admins */}
+                {showRestaurantForm && (
+                    <RestaurantForm
+                        restaurant={editingRestaurant}
+                        onClose={handleRestaurantFormClose}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    // Regular view for non-admin users
     return (
         <div className="dashboard">
             <div className="dashboard-header">
