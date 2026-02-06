@@ -58,7 +58,9 @@ public class RestaurantService {
                 .updatedAt(LocalDateTime.now())
                 .cuisineType(request.getCuisineType())
                 .dietaryOptions(request.getDietaryOptions())
-                .priceRange(PriceRange.valueOf(request.getPriceRange()))
+                .priceRange(request.getPriceRange() != null && !request.getPriceRange().trim().isEmpty()
+                        ? PriceRange.valueOf(request.getPriceRange().toUpperCase())
+                        : null)
                 .build();
 
         Restaurant savedRestaurant = restaurantRepository.save(restaurant);
@@ -230,32 +232,32 @@ public class RestaurantService {
 
     private RestaurantResponseDTO mapToResponse(Restaurant restaurant) {
         RestaurantResponseDTO.UserDTO ownerDTO = new RestaurantResponseDTO.UserDTO(
-            restaurant.getOwner().getId(),
-            restaurant.getOwner().getFirstName(),
-            restaurant.getOwner().getLastName(),
-            restaurant.getOwner().getEmail()
+                restaurant.getOwner().getId(),
+                restaurant.getOwner().getFirstName(),
+                restaurant.getOwner().getLastName(),
+                restaurant.getOwner().getEmail()
         );
 
         return RestaurantResponseDTO.builder()
-            .id(restaurant.getId())
-            .name(restaurant.getName())
-            .address(restaurant.getAddress())
-            .latitude(restaurant.getLatitude())
-            .longitude(restaurant.getLongitude())
-            .phone(restaurant.getPhone())
-            .openingHours(restaurant.getOpeningHours())
-            .description(restaurant.getDescription())
-            .rating(restaurant.getRating())
-            .status(restaurant.getStatus())
-            .isVerified(restaurant.getIsVerified())
-            .verifiedAt(restaurant.getVerifiedAt())
-            .cuisineType(restaurant.getCuisineType())
-            .priceRange(restaurant.getPriceRange() != null ?
-                restaurant.getPriceRange().name().toLowerCase() : null)
-            .dietaryOptions(restaurant.getDietaryOptions())
-            .owner(ownerDTO)
-            .createdAt(restaurant.getCreatedAt())
-            .updatedAt(restaurant.getUpdatedAt())
-            .build();
+                .id(restaurant.getId())
+                .name(restaurant.getName())
+                .address(restaurant.getAddress())
+                .latitude(restaurant.getLatitude())
+                .longitude(restaurant.getLongitude())
+                .phone(restaurant.getPhone())
+                .openingHours(restaurant.getOpeningHours())
+                .description(restaurant.getDescription())
+                .rating(restaurant.getRating())
+                .status(restaurant.getStatus())
+                .isVerified(restaurant.getIsVerified())
+                .verifiedAt(restaurant.getVerifiedAt())
+                .cuisineType(restaurant.getCuisineType())
+                .priceRange(restaurant.getPriceRange() != null ?
+                        restaurant.getPriceRange().name().toLowerCase() : null)
+                .dietaryOptions(restaurant.getDietaryOptions())
+                .owner(ownerDTO)
+                .createdAt(restaurant.getCreatedAt())
+                .updatedAt(restaurant.getUpdatedAt())
+                .build();
     }
 }
