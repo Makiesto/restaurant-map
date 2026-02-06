@@ -1,14 +1,19 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.admin.AdminStatsDTO;
+import com.example.demo.dto.admin.VerifyRestaurantRequestDTO;
 import com.example.demo.dto.restaurant.RestaurantResponseDTO;
 import com.example.demo.dto.user.UserResponseDTO;
 import com.example.demo.service.RestaurantService;
 import com.example.demo.service.UserService;
+import com.example.demo.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -16,12 +21,23 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
-// TODO: Add @PreAuthorize("hasRole('ADMIN')") after implementing security
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
-    
+
     private final RestaurantService restaurantService;
     private final UserService userService;
-    
+    private final AdminService adminService;
+
+    /**
+     * ADMIN: Get admin statistics
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<AdminStatsDTO> getAdminStats() {
+        log.info("GET /api/admin/stats - fetching admin statistics");
+        AdminStatsDTO stats = adminService.getAdminStats();
+        return ResponseEntity.ok(stats);
+    }
+
     /**
      * ADMIN: Get all pending restaurants for approval
      */
@@ -31,7 +47,17 @@ public class AdminController {
         List<RestaurantResponseDTO> restaurants = restaurantService.getPendingRestaurants();
         return ResponseEntity.ok(restaurants);
     }
-    
+
+    /**
+     * ADMIN: Get all unverified restaurants
+     */
+    @GetMapping("/restaurants/unverified")
+    public ResponseEntity<List<RestaurantResponseDTO>> getUnverifiedRestaurants() {
+        log.info("GET /api/admin/restaurants/unverified - fetching unverified restaurants");
+        List<RestaurantResponseDTO> restaurants = restaurantService.getUnverifiedRestaurants();
+        return ResponseEntity.ok(restaurants);
+    }
+
     /**
      * ADMIN: Approve restaurant
      */
@@ -41,7 +67,7 @@ public class AdminController {
         RestaurantResponseDTO restaurant = restaurantService.approveRestaurant(id);
         return ResponseEntity.ok(restaurant);
     }
-    
+
     /**
      * ADMIN: Reject restaurant
      */
@@ -51,7 +77,29 @@ public class AdminController {
         RestaurantResponseDTO restaurant = restaurantService.rejectRestaurant(id);
         return ResponseEntity.ok(restaurant);
     }
-    
+
+    /**
+     * ADMIN: Verify restaurant (mark as legitimate/not spam)
+     */
+    @PutMapping("/restaurants/{id}/verify")
+    public ResponseEntity<RestaurantResponseDTO> verifyRestaurant(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) VerifyRestaurantRequestDTO request) {
+        log.info("PUT /api/admin/restaurants/{}/verify - verifying restaurant", id);
+        RestaurantResponseDTO restaurant = restaurantService.verifyRestaurant(id, request);
+        return ResponseEntity.ok(restaurant);
+    }
+
+    /**
+     * ADMIN: Unverify restaurant
+     */
+    @PutMapping("/restaurants/{id}/unverify")
+    public ResponseEntity<RestaurantResponseDTO> unverifyRestaurant(@PathVariable Long id) {
+        log.info("PUT /api/admin/restaurants/{}/unverify - unverifying restaurant", id);
+        RestaurantResponseDTO restaurant = restaurantService.unverifyRestaurant(id);
+        return ResponseEntity.ok(restaurant);
+    }
+
     /**
      * ADMIN: Verify user (promote to VERIFIED_USER)
      */
@@ -61,7 +109,7 @@ public class AdminController {
         UserResponseDTO user = userService.verifyUser(id);
         return ResponseEntity.ok(user);
     }
-    
+
     /**
      * ADMIN: Get all users
      */
