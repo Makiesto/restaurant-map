@@ -1,192 +1,244 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { apiService } from '../services/api';
-import type { Restaurant } from '../types/restaurant.types';
-import type { Dish } from '../types/dish.types';
-import ReviewSection from '../components/restaurants/ReviewSection.tsx';
-import './RestaurantDetails.css';
+import React, {useState, useEffect} from 'react';
+import {useParams} from 'react-router-dom';
+import axios from 'axios';
+
+interface Restaurant {
+    id: number;
+    name: string;
+    description: string;
+    cuisine: string;
+    address: string;
+    phone: string;
+    opening_hours: string;
+}
 
 const RestaurantDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+    const {restaurantId} = useParams<{ restaurantId: string }>();
+    const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [menu, setMenu] = useState<Dish[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    useEffect(() => {
+        const fetchRestaurantData = async (id: number) => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await axios.get(`http://localhost:8080/api/restaurants/${id}`);
+                setRestaurant(response.data);
+            } catch (err: unknown) {
+                let errorMessage = 'Failed to load restaurant details';
 
-  useEffect(() => {
-    if (id) {
-      fetchRestaurantData(parseInt(id));
+                if (axios.isAxiosError(err)) {
+                    errorMessage = err.response?.data?.detail || err.response?.data?.message || errorMessage;
+                } else if (err instanceof Error) {
+                    errorMessage = err.message;
+                }
+
+                setError(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (restaurantId) {
+            fetchRestaurantData(parseInt(restaurantId));
+        }
+    }, [restaurantId]);
+
+    if (loading) {
+        return (
+            <div style={styles.container}>
+                <div style={styles.loadingSpinner}></div>
+            </div>
+        );
     }
-  }, [id]);
 
-  const fetchRestaurantData = async (restaurantId: number) => {
-    try {
-      setLoading(true);
-      const [restaurantData, menuData] = await Promise.all([
-        apiService.getRestaurantById(restaurantId),
-        apiService.getRestaurantMenu(restaurantId)
-      ]);
-      setRestaurant(restaurantData);
-      setMenu(menuData);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load restaurant details');
-      console.error('Error fetching restaurant:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="restaurant-loading">
-        <div className="spinner"></div>
-        <p>Loading restaurant...</p>
-      </div>
-    );
-  }
-
-  if (error || !restaurant) {
-    return (
-      <div className="restaurant-error">
-        <h2>Restaurant Not Found</h2>
-        <p>{error || 'This restaurant does not exist'}</p>
-        <button onClick={() => navigate('/')} className="btn-back">
-          ← Back to Map
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="restaurant-details">
-      <div className="details-header">
-        <button onClick={() => navigate('/')} className="btn-back-inline">
-          ← Back to Map
-        </button>
-
-        <div className="restaurant-hero">
-          <h1>{restaurant.name}</h1>
-          <p className="hero-address">📍 {restaurant.address}</p>
-
-          <div className="restaurant-meta">
-            {restaurant.rating && (
-              <div className="meta-item">
-                <span className="meta-label">Rating</span>
-                <span className="meta-value">⭐ {restaurant.rating.toFixed(1)}</span>
-              </div>
-            )}
-            {restaurant.phone && (
-              <div className="meta-item">
-                <span className="meta-label">Phone</span>
-                <span className="meta-value">📞 {restaurant.phone}</span>
-              </div>
-            )}
-            {restaurant.openingHours && (
-              <div className="meta-item">
-                <span className="meta-label">Hours</span>
-                <span className="meta-value">🕒 {restaurant.openingHours}</span>
-              </div>
-            )}
-          </div>
-
-          {restaurant.description && (
-            <p className="restaurant-description">{restaurant.description}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="menu-section">
-        <h2>Menu</h2>
-
-        {menu.length === 0 ? (
-          <div className="no-menu">
-            <p>No menu items available yet</p>
-            <p className="text-muted">Check back soon!</p>
-          </div>
-        ) : (
-          <div className="menu-grid">
-            {menu.map((dish) => (
-              <div key={dish.id} className="dish-card">
-                {dish.imageUrl && (
-                  <div className="dish-image">
-                    <img src={dish.imageUrl} alt={dish.name} />
-                  </div>
-                )}
-
-                <div className="dish-content">
-                  <div className="dish-header">
-                    <h3>{dish.name}</h3>
-                    <span className="dish-price">${dish.price.toFixed(2)}</span>
-                  </div>
-
-                  {dish.description && (
-                    <p className="dish-description">{dish.description}</p>
-                  )}
-
-                  {(dish.baseKcal || dish.baseProteinG || dish.baseCarbsG || dish.baseFatG) && (
-                    <div className="nutrition-info">
-                      <h4>Nutrition (per serving)</h4>
-                      <div className="nutrition-grid">
-                        {dish.baseKcal && (
-                          <div className="nutrition-item">
-                            <span className="nutrition-label">Calories</span>
-                            <span className="nutrition-value">{Math.round(dish.baseKcal)} kcal</span>
-                          </div>
-                        )}
-                        {dish.baseProteinG && (
-                          <div className="nutrition-item">
-                            <span className="nutrition-label">Protein</span>
-                            <span className="nutrition-value">{dish.baseProteinG.toFixed(1)}g</span>
-                          </div>
-                        )}
-                        {dish.baseCarbsG && (
-                          <div className="nutrition-item">
-                            <span className="nutrition-label">Carbs</span>
-                            <span className="nutrition-value">{dish.baseCarbsG.toFixed(1)}g</span>
-                          </div>
-                        )}
-                        {dish.baseFatG && (
-                          <div className="nutrition-item">
-                            <span className="nutrition-label">Fat</span>
-                            <span className="nutrition-value">{dish.baseFatG.toFixed(1)}g</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {dish.allergens && dish.allergens.length > 0 && (
-                    <div className="allergens">
-                      <h4>⚠️ Allergens</h4>
-                      <div className="allergen-tags">
-                        {dish.allergens.map((allergen, index) => (
-                          <span key={index} className="allergen-tag">
-                            {allergen}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {!dish.isAvailable && (
-                    <div className="unavailable-badge">
-                      Currently Unavailable
-                    </div>
-                  )}
+    if (error) {
+        return (
+            <div style={styles.container}>
+                <div style={styles.errorCard}>
+                    <h2 style={styles.errorTitle}>Unable to Load Restaurant</h2>
+                    <p style={styles.errorMessage}>{error}</p>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+            </div>
+        );
+    }
 
-        {/* Reviews Section */}
-        <ReviewSection restaurantId={restaurant.id} />
-      </div>
-    </div>
-  );
+    if (!restaurant) {
+        return (
+            <div style={styles.container}>
+                <div style={styles.errorCard}>
+                    <p style={styles.errorMessage}>Restaurant not found</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={styles.container}>
+            <div style={styles.card}>
+                <header style={styles.header}>
+                    <h1 style={styles.restaurantName}>{restaurant.name}</h1>
+                    <span style={styles.cuisineBadge}>{restaurant.cuisine}</span>
+                </header>
+
+                <div style={styles.section}>
+                    <p style={styles.description}>{restaurant.description}</p>
+                </div>
+
+                <div style={styles.divider}></div>
+
+                <div style={styles.infoGrid}>
+                    <div style={styles.infoItem}>
+                        <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <div>
+                            <div style={styles.infoLabel}>Address</div>
+                            <div style={styles.infoValue}>{restaurant.address}</div>
+                        </div>
+                    </div>
+
+                    <div style={styles.infoItem}>
+                        <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        <div>
+                            <div style={styles.infoLabel}>Phone</div>
+                            <div style={styles.infoValue}>{restaurant.phone}</div>
+                        </div>
+                    </div>
+
+                    <div style={styles.infoItem}>
+                        <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <div style={styles.infoLabel}>Hours</div>
+                            <div style={styles.infoValue}>{restaurant.opening_hours}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const styles: { [key: string]: React.CSSProperties } = {
+    container: {
+        minHeight: '100vh',
+        backgroundColor: '#fafafa',
+        padding: '40px 20px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        maxWidth: '700px',
+        width: '100%',
+        padding: '40px',
+    },
+    header: {
+        marginBottom: '24px',
+    },
+    restaurantName: {
+        fontSize: '32px',
+        fontWeight: '600',
+        color: '#1a1a1a',
+        margin: '0 0 12px 0',
+        letterSpacing: '-0.5px',
+    },
+    cuisineBadge: {
+        display: 'inline-block',
+        backgroundColor: '#f5f5f5',
+        color: '#666',
+        padding: '6px 14px',
+        borderRadius: '20px',
+        fontSize: '14px',
+        fontWeight: '500',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+    },
+    section: {
+        marginBottom: '28px',
+    },
+    description: {
+        fontSize: '16px',
+        lineHeight: '1.6',
+        color: '#4a4a4a',
+        margin: 0,
+    },
+    divider: {
+        height: '1px',
+        backgroundColor: '#e5e5e5',
+        margin: '32px 0',
+    },
+    infoGrid: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+    },
+    infoItem: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '16px',
+    },
+    icon: {
+        width: '24px',
+        height: '24px',
+        color: '#999',
+        flexShrink: 0,
+        marginTop: '2px',
+    },
+    infoLabel: {
+        fontSize: '12px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.8px',
+        color: '#999',
+        fontWeight: '600',
+        marginBottom: '4px',
+    },
+    infoValue: {
+        fontSize: '15px',
+        color: '#1a1a1a',
+        lineHeight: '1.5',
+    },
+    loadingSpinner: {
+        width: '40px',
+        height: '40px',
+        border: '3px solid #f3f3f3',
+        borderTop: '3px solid #666',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+    },
+    errorCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        maxWidth: '500px',
+        width: '100%',
+        padding: '40px',
+        textAlign: 'center',
+    },
+    errorTitle: {
+        fontSize: '20px',
+        fontWeight: '600',
+        color: '#1a1a1a',
+        margin: '0 0 12px 0',
+    },
+    errorMessage: {
+        fontSize: '15px',
+        color: '#666',
+        margin: 0,
+    },
 };
 
 export default RestaurantDetails;

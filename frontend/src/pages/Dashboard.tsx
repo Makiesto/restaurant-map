@@ -40,6 +40,13 @@ const Dashboard: React.FC = () => {
         }
     }, [selectedRestaurant]);
 
+    // Scroll to top when forms open to make them visible
+    useEffect(() => {
+        if (showRestaurantForm || showDishForm) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [showRestaurantForm, showDishForm]);
+
     const fetchMyRestaurants = async () => {
         try {
             setLoading(true);
@@ -208,12 +215,16 @@ const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* Restaurant Form Modal for admins */}
+                {/* Modals - Always render when state is true */}
                 {showRestaurantForm && (
-                    <RestaurantForm
-                        restaurant={editingRestaurant}
-                        onClose={handleRestaurantFormClose}
-                    />
+                    <div className="modal-overlay" onClick={() => setShowRestaurantForm(false)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <RestaurantForm
+                                restaurant={editingRestaurant}
+                                onClose={handleRestaurantFormClose}
+                            />
+                        </div>
+                    </div>
                 )}
             </div>
         );
@@ -228,12 +239,6 @@ const Dashboard: React.FC = () => {
                     <p className="subtitle">Manage your restaurant listings and menus</p>
                 </div>
                 <div className="header-actions">
-                    <button
-                        onClick={() => setShowAllergenManager(true)}
-                        className="allergen-preferences-button"
-                    >
-                        🛡️ Manage Allergens
-                    </button>
                     <button onClick={handleAddRestaurant} className="btn-add-restaurant">
                         + Add Restaurant
                     </button>
@@ -418,21 +423,28 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            {/* Restaurant Form Modal */}
+            {/* Modals - Always render when state is true, outside conditional blocks */}
             {showRestaurantForm && (
-                <RestaurantForm
-                    restaurant={editingRestaurant}
-                    onClose={handleRestaurantFormClose}
-                />
+                <div className="modal-overlay" onClick={() => setShowRestaurantForm(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <RestaurantForm
+                            restaurant={editingRestaurant}
+                            onClose={handleRestaurantFormClose}
+                        />
+                    </div>
+                </div>
             )}
 
-            {/* Dish Form Modal */}
             {showDishForm && selectedRestaurant && (
-                <DishForm
-                    dish={editingDish}
-                    restaurantId={selectedRestaurant.id}
-                    onClose={handleDishFormClose}
-                />
+                <div className="modal-overlay" onClick={() => setShowDishForm(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <DishForm
+                            dish={editingDish}
+                            restaurantId={selectedRestaurant.id}
+                            onClose={handleDishFormClose}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );
