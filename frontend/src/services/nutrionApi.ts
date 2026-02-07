@@ -57,18 +57,42 @@ class NutritionApiService {
    */
   async searchFood(query: string): Promise<FoodSearchResult[]> {
     try {
+      console.log('🔍 Searching for:', query);
+      console.log('🔑 API Key:', USDA_API_KEY === 'DEMO_KEY' ? 'DEMO_KEY' : 'Custom key loaded');
+
       const response = await axios.get<SearchResponse>(`${USDA_BASE_URL}/foods/search`, {
         params: {
           api_key: USDA_API_KEY,
           query: query,
           pageSize: 10,
-          dataType: ['Survey (FNDDS)', 'Foundation', 'SR Legacy'], // Most reliable data types
+          // Don't use dataType filter - it causes 500 errors
+          // dataType: ['Survey (FNDDS)', 'Foundation', 'SR Legacy'],
         },
       });
 
+      console.log('✅ Search successful, results:', response.data.foods?.length || 0);
       return response.data.foods || [];
     } catch (error) {
-      console.error('Error searching food:', error);
+      console.error('❌ Error searching food:', error);
+
+      // Log more details about the error
+      if (axios.isAxiosError(error)) {
+        console.error('Status:', error.response?.status);
+        console.error('Message:', error.response?.data);
+        console.error('URL:', error.config?.url);
+
+        // Provide specific error messages
+        if (error.response?.status === 403) {
+          throw new Error('Invalid API key. Please check your VITE_USDA_API_KEY in .env file.');
+        }
+        if (error.response?.status === 429) {
+          throw new Error('Rate limit exceeded. Wait a moment or get a personal API key.');
+        }
+        if (error.response?.status === 500) {
+          throw new Error('USDA API server error. Please try again in a moment.');
+        }
+      }
+
       throw new Error('Failed to search food database');
     }
   }
