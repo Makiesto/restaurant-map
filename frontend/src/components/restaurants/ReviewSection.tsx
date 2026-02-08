@@ -19,6 +19,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string>('');
 
     const [formData, setFormData] = useState<CreateReviewRequest>({
         rating: 0,
@@ -41,8 +42,13 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
 
             // Fetch user's review if authenticated
             if (isAuthenticated) {
-                const userReview = await apiService.getMyReviewForRestaurant(restaurantId);
-                setMyReview(userReview);
+                try {
+                    const userReview = await apiService.getMyReviewForRestaurant(restaurantId);
+                    setMyReview(userReview);
+                } catch (err) {
+                    // User hasn't reviewed yet, this is fine
+                    console.log('No existing review found');
+                }
             }
         } catch (error) {
             console.error('Error fetching reviews:', error);
@@ -55,6 +61,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
         setIsWriting(true);
         setIsEditing(false);
         setFormData({rating: 0, comment: ''});
+        setError('');
     };
 
     const handleStartEditing = () => {
@@ -65,6 +72,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
                 rating: myReview.rating,
                 comment: myReview.comment || '',
             });
+            setError('');
         }
     };
 
@@ -72,34 +80,83 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
         setIsWriting(false);
         setIsEditing(false);
         setFormData({rating: 0, comment: ''});
+        setError('');
     };
 
     const handleSubmit = async () => {
+        // Clear previous errors
+        setError('');
+
+        // Validate rating
         if (formData.rating === 0) {
-            alert('Please select a rating');
+            setError('Please select a rating (1-5 stars)');
             return;
         }
 
+        // Validate rating range
+        if (formData.rating < 1 || formData.rating > 5) {
+            setError('Rating must be between 1 and 5 stars');
+            return;
+        }
+
+        console.log('Submitting review:', {
+            restaurantId,
+            rating: formData.rating,
+            comment: formData.comment,
+            isEditing,
+        });
+
         try {
             setSubmitting(true);
+            setError('');
+
             if (isEditing && myReview) {
+                console.log('Updating existing review:', myReview.id);
                 await apiService.updateReview(myReview.id, formData);
             } else {
+                console.log('Creating new review for restaurant:', restaurantId);
                 await apiService.createReview(restaurantId, formData);
             }
+
+            // Success! Refresh reviews and reset form
             await fetchReviews();
             handleCancel();
-        } catch (error: unknown) {
-            let errorMessage = 'An unexpected error occurred';
+        } catch (err: unknown) {
+            console.error('Review submission error:', err);
 
-            if (axios.isAxiosError(error)) {
-                errorMessage = error.response?.data?.message || error.message;
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
+            let errorMessage = 'Failed to submit review';
+
+            if (axios.isAxiosError(err)) {
+                console.error('Error details:', {
+                    status: err.response?.status,
+                    statusText: err.response?.statusText,
+                    data: err.response?.data,
+                });
+
+                // Get detailed error message from backend
+                if (err.response?.data?.message) {
+                    errorMessage = err.response.data.message;
+                } else if (err.response?.data?.error) {
+                    errorMessage = err.response.data.error;
+                } else if (err.response?.status === 500) {
+                    errorMessage = 'Server error. Please check:\n' +
+                        '1. You are logged in\n' +
+                        '2. The restaurant exists\n' +
+                        '3. You haven\'t already reviewed this restaurant';
+                } else if (err.response?.status === 409) {
+                    errorMessage = 'You have already reviewed this restaurant. Please edit your existing review instead.';
+                } else if (err.response?.status === 401) {
+                    errorMessage = 'Please login to leave a review';
+                } else if (err.response?.status === 400) {
+                    errorMessage = 'Invalid review data. Please check your rating and try again.';
+                } else {
+                    errorMessage = err.message || errorMessage;
+                }
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
             }
 
-            alert(errorMessage);
-            console.error(error);
+            setError(errorMessage);
         } finally {
             setSubmitting(false);
         }
@@ -111,19 +168,20 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
         }
 
         try {
+            setError('');
             await apiService.deleteReview(myReview.id);
             await fetchReviews();
-        } catch (error: unknown) {
-            let errorMessage = 'An unexpected error occurred';
+        } catch (err: unknown) {
+            let errorMessage = 'Failed to delete review';
 
-            if (axios.isAxiosError(error)) {
-                errorMessage = error.response?.data?.message || error.message;
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
+            if (axios.isAxiosError(err)) {
+                errorMessage = err.response?.data?.message || err.message;
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
             }
 
-            alert(errorMessage);
-            console.error(error);
+            setError(errorMessage);
+            console.error('Delete error:', err);
         }
     };
 
@@ -203,6 +261,13 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
             {/* Write/Edit Review */}
             {isAuthenticated ? (
                 <div className="write-review-section">
+                    {/* Show error at the top if present */}
+                    {error && (
+                        <div className="review-error-message">
+                            <strong>⚠️ Error:</strong> {error}
+                        </div>
+                    )}
+
                     {!isWriting && !myReview && (
                         <>
                             <h3>Share Your Experience</h3>
@@ -245,7 +310,10 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({restaurantId}) => {
                     {isWriting && (
                         <>
                             <h3>{isEditing ? 'Edit Your Review' : 'Write a Review'}</h3>
-                            {renderStars(formData.rating, true)}
+                            <div className="rating-selector">
+                                <label>Your Rating: {formData.rating > 0 ? `${formData.rating} star${formData.rating !== 1 ? 's' : ''}` : 'Click to select'}</label>
+                                {renderStars(formData.rating, true)}
+                            </div>
                             <textarea
                                 className="review-textarea"
                                 placeholder="Share your experience... (optional)"
