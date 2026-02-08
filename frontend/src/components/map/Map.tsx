@@ -105,12 +105,17 @@ const Map: React.FC = () => {
     setFilters(newFilters);
   };
 
-  const handleRestaurantClick = (restaurant: Restaurant) => {
+  const handleMarkerClick = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
   };
 
   const handleViewDetails = (restaurantId: number) => {
     navigate(`/restaurant/${restaurantId}`);
+  };
+
+  const handleCardClick = (restaurant: Restaurant) => {
+    // Navigate to restaurant details page
+    navigate(`/restaurant/${restaurant.id}`);
   };
 
   if (loading) {
@@ -153,7 +158,8 @@ const Map: React.FC = () => {
                 className={`restaurant-card ${
                   selectedRestaurant?.id === restaurant.id ? 'selected' : ''
                 }`}
-                onClick={() => handleRestaurantClick(restaurant)}
+                onClick={() => handleCardClick(restaurant)}
+                style={{ cursor: 'pointer' }}
               >
                 <h3>{restaurant.name}</h3>
                 <p className="restaurant-address">
@@ -193,7 +199,7 @@ const Map: React.FC = () => {
                 key={restaurant.id}
                 position={[restaurant.latitude, restaurant.longitude]}
                 eventHandlers={{
-                  click: () => handleRestaurantClick(restaurant),
+                  click: () => handleMarkerClick(restaurant),
                 }}
               >
                 <Popup>

@@ -76,8 +76,22 @@ const RestaurantManagement: React.FC = () => {
   const handleToggleAvailability = async (dish: Dish) => {
     try {
       const updatedDish = await apiService.updateDish(dish.id, {
-        ...dish,
+        name: dish.name,
+        description: dish.description,
+        price: dish.price,
+        imageUrl: dish.imageUrl,
         isAvailable: !dish.isAvailable,
+        components: dish.components?.map(c => ({
+          componentId: c.componentId,
+          amount: c.amount,
+          isOptional: c.isOptional,
+        })),
+        allergens: dish.allergens || [],
+        baseKcal: dish.baseKcal,
+        baseProteinG: dish.baseProteinG,
+        baseCarbsG: dish.baseCarbsG,
+        baseFatG: dish.baseFatG,
+        ingredients: dish.ingredients,
       });
       setDishes(dishes.map(d => d.id === dish.id ? updatedDish : d));
     } catch (err) {
