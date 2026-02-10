@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import RestaurantManagement from './pages/RestaurantManagement';
 import RestaurantDetails from './pages/RestaurantDetails';
 import AdminPanel from './pages/AdminPanel';
+import Profile from './pages/Profile';
 import './App.css';
 
 const App: React.FC = () => {
@@ -23,6 +24,15 @@ const App: React.FC = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/restaurant/:restaurantId" element={<RestaurantDetails />} />
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/dashboard"

@@ -62,15 +62,36 @@ const Map: React.FC = () => {
   const filteredRestaurants = useMemo(() => {
     let filtered = [...restaurants];
 
-    // Search by name
+    // Search by name or address
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
       filtered = filtered.filter(r =>
         r.name.toLowerCase().includes(query) ||
-        r.address.toLowerCase().includes(query)
+        r.address.toLowerCase().includes(query) ||
+        r.description?.toLowerCase().includes(query)
       );
     }
 
+    // Filter by cuisine type
+    if (filters.cuisineType) {
+      filtered = filtered.filter(r =>
+        r.cuisineType?.toLowerCase() === filters.cuisineType.toLowerCase()
+      );
+    }
+
+    // Filter by price range
+    if (filters.priceRange) {
+      filtered = filtered.filter(r => r.priceRange === filters.priceRange);
+    }
+
+    // Filter by dietary options (restaurant must have ALL selected options)
+    if (filters.dietaryOptions.length > 0) {
+      filtered = filtered.filter(r =>
+        filters.dietaryOptions.every(option =>
+          r.dietaryOptions?.includes(option)
+        )
+      );
+    }
 
     // Filter by minimum rating
     if (filters.minRating > 0) {
@@ -103,6 +124,10 @@ const Map: React.FC = () => {
 
   const handleFilterChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
+    // Reset selected restaurant if it's no longer in filtered results
+    if (selectedRestaurant && !filteredRestaurants.find(r => r.id === selectedRestaurant.id)) {
+      setSelectedRestaurant(null);
+    }
   };
 
   const handleMarkerClick = (restaurant: Restaurant) => {
@@ -162,14 +187,41 @@ const Map: React.FC = () => {
                 style={{ cursor: 'pointer' }}
               >
                 <h3>{restaurant.name}</h3>
+
+                {/* Cuisine Type */}
+                {restaurant.cuisineType && (
+                  <span className="cuisine-tag">
+                    {restaurant.cuisineType}
+                  </span>
+                )}
+
                 <p className="restaurant-address">
                   📍 {restaurant.address}
                 </p>
 
+                {/* Price Range */}
+                {restaurant.priceRange && (
+                  <p className="restaurant-address">
+                    💰 {restaurant.priceRange === 'BUDGET' && '$ Budget'}
+                    {restaurant.priceRange === 'MODERATE' && '$$ Moderate'}
+                    {restaurant.priceRange === 'EXPENSIVE' && '$$$ Expensive'}
+                    {restaurant.priceRange === 'LUXURY' && '$$$$ Luxury'}
+                  </p>
+                )}
+
+                {/* Rating */}
                 {restaurant.rating && (
                   <div className="restaurant-rating">
                     ⭐ {restaurant.rating.toFixed(1)}
                   </div>
+                )}
+
+                {/* Dietary Options Preview */}
+                {restaurant.dietaryOptions && restaurant.dietaryOptions.length > 0 && (
+                  <p className="restaurant-address">
+                    🌿 {restaurant.dietaryOptions.slice(0, 2).join(', ')}
+                    {restaurant.dietaryOptions.length > 2 && ' +more'}
+                  </p>
                 )}
               </div>
             ))}
@@ -205,6 +257,11 @@ const Map: React.FC = () => {
                 <Popup>
                   <div className="popup-content">
                     <h3>{restaurant.name}</h3>
+
+                    {restaurant.cuisineType && (
+                      <p>🍽️ {restaurant.cuisineType}</p>
+                    )}
+
                     <p>📍 {restaurant.address}</p>
 
                     {restaurant.rating && (
@@ -212,6 +269,16 @@ const Map: React.FC = () => {
                         ⭐ {restaurant.rating.toFixed(1)}
                       </div>
                     )}
+
+                    {restaurant.priceRange && (
+                      <p>
+                        💰 {restaurant.priceRange === 'BUDGET' && '$ Budget'}
+                        {restaurant.priceRange === 'MODERATE' && '$$ Moderate'}
+                        {restaurant.priceRange === 'EXPENSIVE' && '$$$ Expensive'}
+                        {restaurant.priceRange === 'LUXURY' && '$$$$ Luxury'}
+                      </p>
+                    )}
+
                     <button
                       onClick={() => handleViewDetails(restaurant.id)}
                       className="btn-view-details"

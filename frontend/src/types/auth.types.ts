@@ -30,5 +30,6 @@ export interface AuthResponse {
   email: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
   role: 'USER' | 'VERIFIED_USER' | 'ADMIN';
 }

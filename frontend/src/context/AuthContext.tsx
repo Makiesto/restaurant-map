@@ -7,7 +7,11 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
   role: 'USER' | 'VERIFIED_USER' | 'ADMIN';
+  isActive: boolean;
+  createdAt: string;
+  verifiedAt?: string;
 }
 
 interface AuthContextType {
@@ -52,7 +56,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: response.email,
         firstName: response.firstName,
         lastName: response.lastName,
+        phoneNumber: response.phoneNumber,
         role: response.role,
+        isActive: true, // Default value, should come from backend
+        createdAt: new Date().toISOString(), // Default value, should come from backend
       };
 
       // Save to state
@@ -71,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (data: RegisterRequest) => {
     try {
       await apiService.register(data);
-// Auto-login after registration
+      // Auto-login after registration
       await login({
         email: data.email,
         password: data.password,

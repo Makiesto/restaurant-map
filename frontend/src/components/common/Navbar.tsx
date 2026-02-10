@@ -30,6 +30,10 @@ const Navbar: React.FC = () => {
                 My Restaurants
               </Link>
 
+              <Link to="/profile" className="navbar-link">
+                Profile
+              </Link>
+
               {user.role === 'ADMIN' && (
                 <Link to="/admin" className="navbar-link admin-link">
                   Admin Panel
