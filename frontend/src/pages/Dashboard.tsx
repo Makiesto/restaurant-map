@@ -190,6 +190,9 @@ const Dashboard: React.FC = () => {
                             Panel</p>
                     </div>
                     <div className="header-actions">
+                        <button onClick={() => setShowAllergenManager(true)} className="allergen-preferences-button">
+                            🛡️ Manage Allergens
+                        </button>
                         <button onClick={handleAddRestaurant} className="btn-add-restaurant">
                             + Add Restaurant
                         </button>
@@ -239,6 +242,9 @@ const Dashboard: React.FC = () => {
                     <p className="subtitle">Manage your restaurant listings and menus</p>
                 </div>
                 <div className="header-actions">
+                    <button onClick={() => setShowAllergenManager(true)} className="allergen-preferences-button">
+                        🛡️ Manage Allergens
+                    </button>
                     <button onClick={handleAddRestaurant} className="btn-add-restaurant">
                         + Add Restaurant
                     </button>
@@ -419,6 +425,15 @@ const Dashboard: React.FC = () => {
                                 </div>
                             </>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Allergen Manager Modal */}
+            {showAllergenManager && (
+                <div className="modal-overlay" onClick={() => setShowAllergenManager(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <AllergenManager onClose={() => setShowAllergenManager(false)}/>
                     </div>
                 </div>
             )}
