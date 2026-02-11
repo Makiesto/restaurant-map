@@ -242,9 +242,6 @@ const Dashboard: React.FC = () => {
                     <p className="subtitle">Manage your restaurant listings and menus</p>
                 </div>
                 <div className="header-actions">
-                    <button onClick={() => setShowAllergenManager(true)} className="allergen-preferences-button">
-                        🛡️ Manage Allergens
-                    </button>
                     <button onClick={handleAddRestaurant} className="btn-add-restaurant">
                         + Add Restaurant
                     </button>
