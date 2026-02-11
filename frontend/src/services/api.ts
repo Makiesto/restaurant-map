@@ -50,6 +50,11 @@ class ApiService {
         return response.data;
     }
 
+    async getCurrentUser(): Promise<User> {
+        const response = await this.api.get<User>('/users/me');
+        return response.data;
+    }
+
     // --- Restaurants ---
     async getApprovedRestaurants(): Promise<Restaurant[]> {
         const response = await this.api.get<Restaurant[]>('/restaurants');

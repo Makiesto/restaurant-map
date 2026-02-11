@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import './EmailVerificationBanner.css';
+import { AxiosError } from 'axios';
 
 const EmailVerificationBanner: React.FC = () => {
   const { user } = useAuth();
@@ -21,8 +22,11 @@ const EmailVerificationBanner: React.FC = () => {
     try {
       await apiService.resendVerificationEmail(user.email);
       setMessage('✅ Verification email sent! Check your inbox.');
-    } catch (error: any) {
-      setMessage('❌ ' + (error.response?.data?.message || 'Failed to send email'));
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError
+        ? error.response?.data?.message || error.message
+        : 'Failed to send email';
+      setMessage('❌ ' + errorMessage);
     } finally {
       setSending(false);
     }
