@@ -22,6 +22,7 @@ interface AuthContextType {
   login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,16 +36,88 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+  // Fetch current user from API
+  const fetchCurrentUser = async (authToken: string, skipLogoutOnError = false) => {
+    try {
+      console.log('Fetching current user from API...');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+      const fullUrl = `${apiUrl}/users/me`;
+      console.log('Fetching from:', fullUrl);
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      const response = await fetch(fullUrl, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch user, status:', response.status, 'error:', errorText);
+
+        // Only logout on 401 (unauthorized) and only if not skipping
+        if (response.status === 401 && !skipLogoutOnError) {
+          console.log('Unauthorized - logging out');
+          logout();
+          throw new Error('Unauthorized');
+        }
+
+        // For other errors, just throw but don't logout
+        throw new Error(`Failed to fetch user: ${response.status} - ${errorText}`);
+      }
+
+      const userData = await response.json();
+      console.log('User fetched from API:', userData);
+
+      setUser(userData);
+      // Update localStorage with fresh data
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      return userData;
+    } catch (error) {
+      console.error('Error in fetchCurrentUser:', error);
+      // Don't logout here - only logout on 401 above
+      throw error;
     }
-    setIsLoading(false);
+  };
+
+  // Refresh user data from API
+  const refreshUser = async () => {
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) {
+      console.error('No token found, cannot refresh user');
+      throw new Error('No token available');
+    }
+
+    console.log('Refreshing user with token...');
+    return await fetchCurrentUser(storedToken);
+  };
+
+  // Load user from API on mount (if token exists)
+  useEffect(() => {
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+
+      if (storedToken) {
+        console.log('Token found, fetching user from API...');
+        setToken(storedToken);
+        try {
+          // Always fetch fresh user data from API instead of using stale localStorage
+          await fetchCurrentUser(storedToken);
+        } catch (error) {
+          console.error('Failed to load user, clearing auth');
+          // If API call fails, user will be null (already handled in fetchCurrentUser)
+        }
+      } else {
+        console.log('No token found, user not logged in');
+      }
+
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = async (credentials: LoginRequest) => {
@@ -58,8 +131,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         lastName: response.lastName,
         phoneNumber: response.phoneNumber,
         role: response.role,
-        isActive: true, // Default value, should come from backend
-        createdAt: new Date().toISOString(), // Default value, should come from backend
+        isActive: true,
+        createdAt: new Date().toISOString(),
       };
 
       // Save to state
@@ -104,6 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

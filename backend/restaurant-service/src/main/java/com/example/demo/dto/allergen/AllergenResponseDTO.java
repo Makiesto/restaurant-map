@@ -12,5 +12,4 @@ import lombok.NoArgsConstructor;
 public class AllergenResponseDTO {
     private Long id;
     private String name;
-    private String severityLevel;
 }

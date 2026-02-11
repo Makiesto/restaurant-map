@@ -8,13 +8,17 @@ import type {Review} from '../types/review.types';
 import './Profile.css';
 import EditProfileModal from '../components/modals/EditProfileModal';
 import ChangePasswordModal from '../components/modals/ChangePasswordModal';
-import type {User} from "../types/auth.types.ts";
 
 type TabType = 'account' | 'allergens' | 'activity';
 
 const Profile: React.FC = () => {
-    const {user, logout} = useAuth();
+    const {user, logout, refreshUser} = useAuth();
     const navigate = useNavigate();
+
+    // Debug: Log user changes
+    useEffect(() => {
+        console.log('Profile page - user updated:', user);
+    }, [user]);
     const [activeTab, setActiveTab] = useState<TabType>('account');
     const [showAllergenManager, setShowAllergenManager] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -53,17 +57,44 @@ const Profile: React.FC = () => {
         loadUserData();
     };
 
-    const handleSaveProfile = async (updated: Partial<User>) => {
-        await apiService.updateProfile({
-            firstName: updated.firstName!,
-            lastName: updated.lastName!,
+    const handleSaveProfile = async (updated: { email: string; phoneNumber?: string }) => {
+        console.log('=== SAVE PROFILE START ===');
+        console.log('handleSaveProfile received:', updated);
+        console.log('Current user before save:', user);
+
+        if (!updated.email) {
+            throw new Error('Email is required');
+        }
+
+        const emailChanged = updated.email !== user?.email;
+
+        const result = await apiService.updateProfile({
+            email: updated.email,
             phoneNumber: updated.phoneNumber,
         });
 
-        // Reload user data to reflect changes
-        await loadUserData();
-        // Refresh the page to update the auth context
-        window.location.reload();
+        console.log('API returned updated user:', result);
+
+        if (emailChanged) {
+            // Email changed - must log out and log back in with new email
+            alert('Email updated successfully! You will be logged out. Please log in again with your new email address.');
+            logout();
+            navigate('/login');
+        } else {
+            // Only phone number changed - refresh user data without page reload
+            console.log('Phone number updated, refreshing user data...');
+            try {
+                // Small delay to ensure DB transaction completes
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await refreshUser();
+                console.log('User refreshed successfully');
+                setShowEditProfile(false);
+            } catch (error) {
+                console.error('Failed to refresh user:', error);
+                // Don't close modal on error, user can try again
+                alert('Profile updated but failed to refresh. Please reload the page manually.');
+            }
+        }
     };
 
     const handleChangePassword = async (currentPassword: string, newPassword: string) => {

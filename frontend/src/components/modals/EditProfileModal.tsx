@@ -16,7 +16,7 @@ interface User {
 interface EditProfileModalProps {
   user: User;
   onClose: () => void;
-  onSave: (updated: { email?: string; phoneNumber?: string }) => Promise<void>;
+  onSave: (updated: { email: string; phoneNumber?: string }) => Promise<void>;
   onChangePasswordClick: () => void;
 }
 
@@ -30,6 +30,18 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     email: user.email,
     phoneNumber: user.phoneNumber || '',
   });
+
+  // Reset form when user changes (e.g., after save/reload)
+  useEffect(() => {
+    console.log('User prop changed, resetting form with:', user);
+    setFormData({
+      email: user.email,
+      phoneNumber: user.phoneNumber || '',
+    });
+  }, [user]);
+
+  console.log('EditProfileModal current formData:', formData);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -47,7 +59,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    console.log(`Field changed: ${name} = ${value}`);
+    setFormData({ ...formData, [name]: value });
+    console.log('Updated formData:', { ...formData, [name]: value });
     setError('');
     setSuccess(false);
   };
@@ -69,16 +84,31 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       return;
     }
 
+    // Additional safety check
+    if (!formData.email || !formData.email.trim()) {
+      setError('Email cannot be empty');
+      return;
+    }
+
     setSaving(true);
     setError('');
     try {
-      await onSave({
-        email: formData.email.trim() !== user.email ? formData.email.trim() : undefined,
-        phoneNumber: formData.phoneNumber.trim() || undefined,
-      });
+      // Make sure email is always provided and not empty
+      const updateData: { email: string; phoneNumber?: string } = {
+        email: formData.email.trim(),
+      };
+
+      // Only include phoneNumber if it has a value
+      if (formData.phoneNumber && formData.phoneNumber.trim()) {
+        updateData.phoneNumber = formData.phoneNumber.trim();
+      }
+
+      console.log('Sending update data:', updateData);
+      await onSave(updateData);
       setSuccess(true);
-      setTimeout(() => onClose(), 1200);
+      // Don't close automatically - parent will reload and close
     } catch (err: unknown) {
+      console.error('Save error:', err);
       const message =
         err instanceof Error ? err.message : 'Failed to update profile. Please try again.';
       setError(message);
@@ -189,16 +219,32 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               placeholder="+1 (555) 000-0000"
               autoComplete="tel"
             />
-            <span className="field-hint">Optional</span>
+            <span className="field-hint">Optional - Current: {formData.phoneNumber || 'empty'}</span>
           </div>
 
           {/* Info box about email change */}
           {formData.email !== user.email && (
-            <div className="edit-info-box">
-              <span className="info-icon">ℹ️</span>
-              <p>
-                <strong>Note:</strong> After changing your email, you'll need to log in with your new email address.
-              </p>
+            <div className="edit-info-box" style={{
+              background: '#fff3cd',
+              border: '1.5px solid #ffc107',
+              color: '#856404',
+              padding: '12px 16px',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px',
+              marginTop: '16px'
+            }}>
+              <span style={{ fontSize: '18px', flexShrink: 0 }}>⚠️</span>
+              <div style={{ margin: 0 }}>
+                <p style={{ margin: '0 0 4px 0', fontWeight: '600' }}>Important:</p>
+                <p style={{ margin: 0 }}>
+                  After changing your email, you will be logged out automatically.
+                  Please log in again using your new email address: <strong>{formData.email}</strong>
+                </p>
+              </div>
             </div>
           )}
 

@@ -209,9 +209,20 @@ class ApiService {
     }
 
     // --- Profile ---
-    async updateProfile(data: { firstName: string; lastName: string; phoneNumber?: string }): Promise<User> {
-        const response = await this.api.patch<User>('/users/me', data);
-        return response.data;
+    async updateProfile(data: { email: string; phoneNumber?: string }): Promise<User> {
+        try {
+            console.log('Updating profile with data:', data);
+            const response = await this.api.patch<User>('/users/me', data);
+            console.log('Profile update response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Profile update error:', error);
+            if (axios.isAxiosError(error)) {
+                const message = error.response?.data?.message || error.response?.data?.error || error.message;
+                throw new Error(message);
+            }
+            throw error;
+        }
     }
 
     async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {

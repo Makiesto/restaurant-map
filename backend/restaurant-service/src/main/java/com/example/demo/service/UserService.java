@@ -84,14 +84,46 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDTO updateProfileByEmail(String email, UpdateProfileRequestDTO request) {
-        log.info("Updating profile for user: {}", email);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
+    public UserResponseDTO updateProfileByEmail(String currentEmail, UpdateProfileRequestDTO request) {
+        log.info("==== UPDATE PROFILE START ====");
+        log.info("Current authenticated email: {}", currentEmail);
+        log.info("Request email: {}", request.getEmail());
+        log.info("Request phoneNumber: {}", request.getPhoneNumber());
+
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> {
+                    log.error("User not found with email: {}", currentEmail);
+                    return new ResourceNotFoundException("User not found with email: " + currentEmail);
+                });
+
+        log.info("Found user: id={}, email={}, firstName={}", user.getId(), user.getEmail(), user.getFirstName());
+
+        // Update phone number (always safe)
         user.setPhoneNumber(request.getPhoneNumber());
-        return mapToResponse(userRepository.save(user));
+        log.info("Updated phone number to: {}", request.getPhoneNumber());
+
+        // Check if email is being changed to a different address
+        if (request.getEmail() != null && !request.getEmail().equalsIgnoreCase(currentEmail)) {
+            log.info("Email change detected: {} -> {}", currentEmail, request.getEmail());
+
+            // Verify new email is not already taken
+            if (userRepository.existsByEmail(request.getEmail())) {
+                log.error("Email already in use: {}", request.getEmail());
+                throw new ValidationException("Email already in use by another account");
+            }
+
+            log.info("New email is available, updating...");
+            user.setEmail(request.getEmail());
+            log.info("Email updated in entity to: {}", user.getEmail());
+        } else {
+            log.info("No email change (same email or null)");
+        }
+
+        User savedUser = userRepository.save(user);
+        log.info("User saved: id={}, email={}", savedUser.getId(), savedUser.getEmail());
+        log.info("==== UPDATE PROFILE END ====");
+
+        return mapToResponse(savedUser);
     }
 
     @Transactional

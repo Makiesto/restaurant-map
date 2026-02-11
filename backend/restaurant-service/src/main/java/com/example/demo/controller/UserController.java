@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,38 +20,29 @@ public class UserController {
 
     private final UserService userService;
 
-    private String getCurrentUserEmail() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth.getName(); // email, set by CustomUserDetailsService
-    }
-
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> getCurrentUser() {
-        String email = getCurrentUserEmail();
-        log.info("GET /api/users/me - {}", email);
+    public ResponseEntity<UserResponseDTO> getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        log.info("Getting current user profile for: {}", email);
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
     @PatchMapping("/me")
     public ResponseEntity<UserResponseDTO> updateProfile(
-            @Valid @RequestBody UpdateProfileRequestDTO request) {
-        String email = getCurrentUserEmail();
-        log.info("PATCH /api/users/me - {}", email);
-        return ResponseEntity.ok(userService.updateProfileByEmail(email, request));
+            @Valid @RequestBody UpdateProfileRequestDTO request,
+            Authentication authentication) {
+        String currentEmail = authentication.getName();
+        log.info("Updating profile for user: {}", currentEmail);
+        return ResponseEntity.ok(userService.updateProfileByEmail(currentEmail, request));
     }
 
     @PostMapping("/me/change-password")
     public ResponseEntity<Void> changePassword(
-            @Valid @RequestBody ChangePasswordRequestDTO request) {
-        String email = getCurrentUserEmail();
-        log.info("POST /api/users/me/change-password - {}", email);
+            @Valid @RequestBody ChangePasswordRequestDTO request,
+            Authentication authentication) {
+        String email = authentication.getName();
+        log.info("Password change request for user: {}", email);
         userService.changePasswordByEmail(email, request);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
-        log.info("GET /api/users/{}", id);
-        return ResponseEntity.ok(userService.getUserById(id));
+        return ResponseEntity.ok().build();
     }
 }

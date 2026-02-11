@@ -11,9 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,29 +25,43 @@ public class AllergenService {
 
     @Transactional(readOnly = true)
     public List<AllergenResponseDTO> getAllAllergens() {
-        log.info("Fetching all allergens");
         return allergenRepository.findAll().stream()
-                .map(this::mapToResponse)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<AllergenResponseDTO> getUserAllergens(Long userId) {
-        log.info("Fetching allergens for user: {}", userId);
+    public Allergen getAllergenById(Long id) {
+        return allergenRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Allergen not found with ID: " + id));
+    }
 
-        User user = userRepository.findById(userId)
+    @Transactional(readOnly = true)
+    public Allergen getAllergenByName(String name) {
+        return allergenRepository.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Allergen not found with name: " + name));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AllergenResponseDTO> getUserAllergens(Long userId) {
+        log.info("Getting allergens for user ID: {}", userId);
+
+        // Use a custom query to eagerly fetch allergens
+        User user = userRepository.findByIdWithAllergens(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
+        // Now we can safely iterate because allergens are already loaded
         return user.getAllergens().stream()
-                .map(this::mapToResponse)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public List<AllergenResponseDTO> updateUserAllergens(Long userId, List<String> allergenNames) {
-        log.info("Updating allergens for user: {} with names: {}", userId, allergenNames);
+        log.info("Updating allergens for user ID: {} with allergens: {}", userId, allergenNames);
 
-        User user = userRepository.findById(userId)
+        // Use JOIN FETCH to avoid lazy loading issues
+        User user = userRepository.findByIdWithAllergens(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         // Clear existing allergens
@@ -56,36 +69,27 @@ public class AllergenService {
 
         // Add new allergens
         if (allergenNames != null && !allergenNames.isEmpty()) {
-            Set<Allergen> newAllergens = new HashSet<>();
+            List<Allergen> allergens = allergenNames.stream()
+                    .map(name -> allergenRepository.findByName(name)
+                            .orElseThrow(() -> new ResourceNotFoundException("Allergen not found: " + name)))
+                    .collect(Collectors.toList());
 
-            for (String name : allergenNames) {
-                Allergen allergen = allergenRepository.findByName(name)
-                        .orElseGet(() -> {
-                            // Create new allergen if it doesn't exist
-                            Allergen newAllergen = Allergen.builder()
-                                    .name(name)
-                                    .build();
-                            return allergenRepository.save(newAllergen);
-                        });
-                newAllergens.add(allergen);
-            }
-
-            user.getAllergens().addAll(newAllergens);
+            user.getAllergens().addAll(allergens);
         }
 
         User savedUser = userRepository.save(user);
-        log.info("Updated allergens for user: {}", userId);
+        log.info("Successfully updated allergens for user ID: {}", userId);
 
+        // Return the updated allergens as DTOs
         return savedUser.getAllergens().stream()
-                .map(this::mapToResponse)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private AllergenResponseDTO mapToResponse(Allergen allergen) {
+    private AllergenResponseDTO mapToDTO(Allergen allergen) {
         return AllergenResponseDTO.builder()
                 .id(allergen.getId())
                 .name(allergen.getName())
-                .severityLevel(allergen.getSeverityLevel())
                 .build();
     }
 }
