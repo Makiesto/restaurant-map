@@ -16,7 +16,7 @@ interface User {
 interface EditProfileModalProps {
   user: User;
   onClose: () => void;
-  onSave: (updated: Partial<User>) => Promise<void>;
+  onSave: (updated: { email?: string; phoneNumber?: string }) => Promise<void>;
   onChangePasswordClick: () => void;
 }
 
@@ -27,8 +27,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onChangePasswordClick,
 }) => {
   const [formData, setFormData] = useState({
-    firstName: user.firstName,
-    lastName: user.lastName,
+    email: user.email,
     phoneNumber: user.phoneNumber || '',
   });
   const [saving, setSaving] = useState(false);
@@ -45,7 +44,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   }, [onClose]);
 
   const getInitials = () =>
-    `${formData.firstName.charAt(0)}${formData.lastName.charAt(0)}`.toUpperCase();
+    `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -54,10 +53,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   const validate = (): string => {
-    if (!formData.firstName.trim()) return 'First name is required';
-    if (!formData.lastName.trim()) return 'Last name is required';
-    if (formData.firstName.trim().length < 2) return 'First name must be at least 2 characters';
-    if (formData.lastName.trim().length < 2) return 'Last name must be at least 2 characters';
+    if (!formData.email.trim()) return 'Email is required';
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) return 'Invalid email format';
+
     return '';
   };
 
@@ -72,8 +73,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setError('');
     try {
       await onSave({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+        email: formData.email.trim() !== user.email ? formData.email.trim() : undefined,
         phoneNumber: formData.phoneNumber.trim() || undefined,
       });
       setSuccess(true);
@@ -88,8 +88,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   const hasChanges =
-    formData.firstName.trim() !== user.firstName ||
-    formData.lastName.trim() !== user.lastName ||
+    formData.email.trim() !== user.email ||
     formData.phoneNumber.trim() !== (user.phoneNumber || '');
 
   return (
@@ -101,7 +100,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <div className="edit-profile-header-inner">
             <div>
               <h2>Edit Profile</h2>
-              <p>Update your personal information</p>
+              <p>Update your account information</p>
             </div>
             <button className="edit-profile-close" onClick={onClose} aria-label="Close">
               ✕
@@ -116,8 +115,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <div className="edit-profile-avatar-row">
             <div className="edit-avatar-preview">{getInitials()}</div>
             <div className="edit-avatar-info">
-              <strong>{formData.firstName} {formData.lastName}</strong>
-              <p>{user.email}</p>
+              <strong>{user.firstName} {user.lastName}</strong>
+              <p>Account ID: #{user.id}</p>
             </div>
           </div>
 
@@ -133,48 +132,48 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
           )}
 
-          {/* Name row */}
+          {/* Name row - READ ONLY */}
           <div className="edit-form-row">
             <div className="edit-form-group">
               <label htmlFor="firstName">First Name</label>
               <input
                 id="firstName"
-                name="firstName"
                 type="text"
-                value={formData.firstName}
-                onChange={handleChange}
-                disabled={saving}
-                placeholder="John"
-                autoComplete="given-name"
+                value={user.firstName}
+                readOnly
+                className="readonly-field"
+                tabIndex={-1}
               />
+              <span className="field-hint">First name cannot be changed</span>
             </div>
             <div className="edit-form-group">
               <label htmlFor="lastName">Last Name</label>
               <input
                 id="lastName"
-                name="lastName"
                 type="text"
-                value={formData.lastName}
-                onChange={handleChange}
-                disabled={saving}
-                placeholder="Doe"
-                autoComplete="family-name"
+                value={user.lastName}
+                readOnly
+                className="readonly-field"
+                tabIndex={-1}
               />
+              <span className="field-hint">Last name cannot be changed</span>
             </div>
           </div>
 
-          {/* Email — read-only */}
+          {/* Email - EDITABLE */}
           <div className="edit-form-group">
             <label htmlFor="email">Email Address</label>
             <input
               id="email"
+              name="email"
               type="email"
-              value={user.email}
-              readOnly
-              className="readonly-field"
-              tabIndex={-1}
+              value={formData.email}
+              onChange={handleChange}
+              disabled={saving}
+              placeholder="your.email@example.com"
+              autoComplete="email"
             />
-            <span className="field-hint">Email cannot be changed</span>
+            <span className="field-hint">You can change your email address</span>
           </div>
 
           {/* Phone */}
@@ -190,7 +189,18 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               placeholder="+1 (555) 000-0000"
               autoComplete="tel"
             />
+            <span className="field-hint">Optional</span>
           </div>
+
+          {/* Info box about email change */}
+          {formData.email !== user.email && (
+            <div className="edit-info-box">
+              <span className="info-icon">ℹ️</span>
+              <p>
+                <strong>Note:</strong> After changing your email, you'll need to log in with your new email address.
+              </p>
+            </div>
+          )}
 
           {/* Change password link */}
           <button

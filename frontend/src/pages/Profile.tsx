@@ -1,18 +1,20 @@
 import React, {useState, useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {useAuth} from '../context/AuthContext';
 import {apiService} from '../services/api';
 import AllergenManager from '../components/allergens/AllergenManager';
 import type {Restaurant} from '../types/restaurant.types';
 import type {Review} from '../types/review.types';
 import './Profile.css';
-import EditProfileModal from './EditProfileModal';
-import ChangePasswordModal from './ChangePasswordModal';
+import EditProfileModal from '../components/modals/EditProfileModal';
+import ChangePasswordModal from '../components/modals/ChangePasswordModal';
 import type {User} from "../types/auth.types.ts";
 
 type TabType = 'account' | 'allergens' | 'activity';
 
 const Profile: React.FC = () => {
-    const {user} = useAuth();
+    const {user, logout} = useAuth();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<TabType>('account');
     const [showAllergenManager, setShowAllergenManager] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -58,13 +60,16 @@ const Profile: React.FC = () => {
             phoneNumber: updated.phoneNumber,
         });
 
+        // Reload user data to reflect changes
         await loadUserData();
-
+        // Refresh the page to update the auth context
+        window.location.reload();
     };
 
     const handleChangePassword = async (currentPassword: string, newPassword: string) => {
         await apiService.changePassword({currentPassword, newPassword});
-        await apiService.logout();
+        // Log user out after password change for security
+        logout();
         navigate('/login');
     };
 
@@ -100,42 +105,60 @@ const Profile: React.FC = () => {
                 <div className="section-header">
                     <h2>Account Information</h2>
                     <div className="section-header-actions">
-                        <button className="btn btn-primary" onClick={() => setShowEditProfile(true)}>
-                            Edit Profile
+                        <button className="btn-edit" onClick={() => setShowEditProfile(true)}>
+                            ✏️ Edit Profile
                         </button>
                     </div>
                 </div>
 
                 <div className="info-grid">
                     <div className="info-item">
-                        <span className="info-label">First Name</span>
+                        <span className="info-label">
+                            <span className="info-icon">👤</span>
+                            First Name
+                        </span>
                         <span className="info-value">{user?.firstName}</span>
                     </div>
 
                     <div className="info-item">
-                        <span className="info-label">Last Name</span>
+                        <span className="info-label">
+                            <span className="info-icon">👤</span>
+                            Last Name
+                        </span>
                         <span className="info-value">{user?.lastName}</span>
                     </div>
 
                     <div className="info-item">
-                        <span className="info-label">Email Address</span>
+                        <span className="info-label">
+                            <span className="info-icon">✉️</span>
+                            Email Address
+                        </span>
                         <span className="info-value">{user?.email}</span>
                     </div>
 
                     <div className="info-item">
-                        <span className="info-label">Phone Number</span>
-                        <span className="info-value empty">
+                        <span className="info-label">
+                            <span className="info-icon">📱</span>
+                            Phone Number
+                        </span>
+                        <span className={`info-value ${!user?.phoneNumber ? 'empty' : ''}`}>
               {user?.phoneNumber || 'Not provided'}
             </span>
                     </div>
 
                     <div className="info-item">
-                        <span className="info-label">Account Type</span>
+                        <span className="info-label">
+                            <span className="info-icon">🏷️</span>
+                            Account Type
+                        </span>
                         <span className="info-value">{getRoleDisplay()}</span>
                     </div>
 
                     <div className="info-item">
-                        <span className="info-label">Member Since</span>
+                        <span className="info-label">
+                            <span className="info-icon">📅</span>
+                            Member Since
+                        </span>
                         <span className="info-value">
               {user?.createdAt ? formatDate(user.createdAt) : 'Unknown'}
             </span>
@@ -143,13 +166,19 @@ const Profile: React.FC = () => {
 
                     {user?.verifiedAt && (
                         <div className="info-item">
-                            <span className="info-label">Verified On</span>
+                            <span className="info-label">
+                                <span className="info-icon">✅</span>
+                                Verified On
+                            </span>
                             <span className="info-value">{formatDate(user.verifiedAt)}</span>
                         </div>
                     )}
 
                     <div className="info-item">
-                        <span className="info-label">Account Status</span>
+                        <span className="info-label">
+                            <span className="info-icon">🔒</span>
+                            Account Status
+                        </span>
                         <span className="info-value">
               {user?.isActive ? '✅ Active' : '❌ Inactive'}
             </span>
@@ -176,7 +205,7 @@ const Profile: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="action-card" onClick={() => window.location.href = '/dashboard'}>
+                    <div className="action-card" onClick={() => navigate('/dashboard')}>
                         <div className="action-icon-large">🏪</div>
                         <div className="action-content">
                             <h3>My Restaurants</h3>
@@ -199,6 +228,14 @@ const Profile: React.FC = () => {
                             </p>
                         </div>
                     </div>
+
+                    <div className="action-card" onClick={() => setShowChangePassword(true)}>
+                        <div className="action-icon-large">🔐</div>
+                        <div className="action-content">
+                            <h3>Change Password</h3>
+                            <p>Update your account security</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </>
@@ -210,7 +247,7 @@ const Profile: React.FC = () => {
                 <h2>Allergen Preferences</h2>
                 <div className="section-header-actions">
                     <button className="btn-manage" onClick={() => setShowAllergenManager(true)}>
-                        Manage Allergens
+                        🛡️ Manage Allergens
                     </button>
                 </div>
             </div>
@@ -231,14 +268,10 @@ const Profile: React.FC = () => {
                         ))}
                     </div>
 
-                    <div style={{
-                        marginTop: '24px',
-                        padding: '16px',
-                        background: 'var(--color-bg)',
-                        borderRadius: '4px'
-                    }}>
-                        <p style={{margin: 0, fontSize: '13px', color: 'var(--color-text-muted)', lineHeight: '1.6'}}>
-                            💡 Dishes containing these allergens will be highlighted with warnings when you browse
+                    <div className="allergen-info">
+                        <span className="allergen-info-icon">💡</span>
+                        <p>
+                            Dishes containing these allergens will be highlighted with warnings when you browse
                             restaurant menus.
                         </p>
                     </div>
@@ -289,42 +322,24 @@ const Profile: React.FC = () => {
                 </div>
 
                 {myReviews.length === 0 ? (
-                    <p style={{color: 'var(--color-text-muted)', fontSize: '14px', margin: 0}}>
-                        You haven't written any reviews yet.
-                    </p>
+                    <div className="empty-state">
+                        <div className="empty-state-icon">⭐</div>
+                        <p>You haven't written any reviews yet.</p>
+                    </div>
                 ) : (
                     <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
                         {myReviews.slice(0, 5).map((review) => (
-                            <div
-                                key={review.id}
-                                style={{
-                                    padding: '16px',
-                                    background: 'var(--color-bg)',
-                                    borderRadius: '4px',
-                                    border: '1px solid var(--color-border)',
-                                }}
-                            >
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
-                                    <strong style={{fontSize: '14px', color: 'var(--color-text)'}}>
-                                        {review.restaurantName}
-                                    </strong>
-                                    <span style={{fontSize: '14px'}}>
-                    {'⭐'.repeat(review.rating)}
-                  </span>
+                            <div key={review.id} className="review-item">
+                                <div className="review-header">
+                                    <h4>{review.restaurantName}</h4>
+                                    <div className="review-rating">
+                                        {'⭐'.repeat(review.rating)}
+                                    </div>
                                 </div>
                                 {review.comment && (
-                                    <p style={{
-                                        margin: '0 0 8px 0',
-                                        fontSize: '13px',
-                                        color: 'var(--color-text-muted)',
-                                        lineHeight: '1.5'
-                                    }}>
-                                        {review.comment}
-                                    </p>
+                                    <p className="review-comment">{review.comment}</p>
                                 )}
-                                <span style={{fontSize: '11px', color: 'var(--color-text-subtle)'}}>
-                  {formatDate(review.createdAt)}
-                </span>
+                                <span className="review-date">{formatDate(review.createdAt)}</span>
                             </div>
                         ))}
                     </div>
@@ -342,51 +357,18 @@ const Profile: React.FC = () => {
                         {myRestaurants.map((restaurant) => (
                             <div
                                 key={restaurant.id}
-                                style={{
-                                    padding: '16px',
-                                    background: 'var(--color-bg)',
-                                    borderRadius: '4px',
-                                    border: '1px solid var(--color-border)',
-                                    cursor: 'pointer',
-                                    transition: 'var(--transition)',
-                                }}
-                                onClick={() => window.location.href = `/restaurant/${restaurant.id}`}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--color-accent)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--color-border)';
-                                }}
+                                className="restaurant-item"
+                                onClick={() => navigate(`/restaurant/${restaurant.id}`)}
                             >
                                 <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
-                                    <strong style={{fontSize: '14px', color: 'var(--color-text)'}}>
-                                        {restaurant.name}
-                                    </strong>
-                                    <span style={{
-                                        fontSize: '11px',
-                                        padding: '4px 8px',
-                                        borderRadius: '4px',
-                                        background: restaurant.status === 'APPROVED' ? 'rgba(72, 187, 120, 0.1)' :
-                                            restaurant.status === 'PENDING' ? 'rgba(246, 173, 85, 0.1)' :
-                                                'rgba(252, 129, 129, 0.1)',
-                                        color: restaurant.status === 'APPROVED' ? '#38a169' :
-                                            restaurant.status === 'PENDING' ? '#dd6b20' :
-                                                '#c53030',
-                                    }}>
-                    {restaurant.status}
-                  </span>
+                                    <h4>{restaurant.name}</h4>
+                                    <span className={`restaurant-status-badge status-${restaurant.status.toLowerCase()}`}>
+                                        {restaurant.status}
+                                    </span>
                                 </div>
-                                <p style={{margin: 0, fontSize: '12px', color: 'var(--color-text-muted)'}}>
-                                    📍 {restaurant.address}
-                                </p>
+                                <p className="restaurant-status">📍 {restaurant.address}</p>
                                 {restaurant.rating && (
-                                    <p style={{
-                                        margin: '8px 0 0 0',
-                                        fontSize: '12px',
-                                        color: 'var(--color-text-muted)'
-                                    }}>
-                                        ⭐ {restaurant.rating.toFixed(1)}
-                                    </p>
+                                    <p className="restaurant-status">⭐ {restaurant.rating.toFixed(1)}</p>
                                 )}
                             </div>
                         ))}
@@ -418,38 +400,42 @@ const Profile: React.FC = () => {
             {/* Profile Header */}
             <div className="profile-header">
                 <div className="profile-header-content">
-                    <div className="profile-avatar">{getInitials()}</div>
-                    <h1>
-                        {user.firstName} {user.lastName}
-                    </h1>
-                    <p className="profile-email">{user.email}</p>
+                    <div className="profile-avatar-container">
+                        <div className="profile-avatar">{getInitials()}</div>
+                    </div>
+                    <div className="profile-info">
+                        <h1>
+                            {user.firstName} {user.lastName}
+                        </h1>
+                        <p className="profile-email">{user.email}</p>
 
-                    <div className="profile-badges">
-                        <div className="profile-badge">
-                            <span className="badge-icon">👤</span>
-                            <span>{getRoleDisplay()}</span>
-                        </div>
-
-                        {user.verifiedAt && (
-                            <div className="profile-badge badge-verified">
-                                <span className="badge-icon">✅</span>
-                                <span>Verified</span>
-                            </div>
-                        )}
-
-                        {user.role === 'ADMIN' && (
-                            <div className="profile-badge badge-admin">
-                                <span className="badge-icon">👑</span>
-                                <span>Admin</span>
-                            </div>
-                        )}
-
-                        {userAllergens.length > 0 && (
+                        <div className="profile-badges">
                             <div className="profile-badge">
-                                <span className="badge-icon">🛡️</span>
-                                <span>{userAllergens.length} Allergen{userAllergens.length !== 1 ? 's' : ''}</span>
+                                <span className="badge-icon">👤</span>
+                                <span>{getRoleDisplay()}</span>
                             </div>
-                        )}
+
+                            {user.verifiedAt && (
+                                <div className="profile-badge badge-verified">
+                                    <span className="badge-icon">✅</span>
+                                    <span>Verified</span>
+                                </div>
+                            )}
+
+                            {user.role === 'ADMIN' && (
+                                <div className="profile-badge badge-admin">
+                                    <span className="badge-icon">👑</span>
+                                    <span>Admin</span>
+                                </div>
+                            )}
+
+                            {userAllergens.length > 0 && (
+                                <div className="profile-badge">
+                                    <span className="badge-icon">🛡️</span>
+                                    <span>{userAllergens.length} Allergen{userAllergens.length !== 1 ? 's' : ''}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -502,22 +488,26 @@ const Profile: React.FC = () => {
                 </div>
             )}
 
+            {/* Edit Profile Modal */}
             {showEditProfile && user && (
                 <EditProfileModal
                     user={user}
                     onClose={() => setShowEditProfile(false)}
                     onSave={handleSaveProfile}
-                    onChangePasswordClick={() => setShowChangePassword(true)}
+                    onChangePasswordClick={() => {
+                        setShowEditProfile(false);
+                        setShowChangePassword(true);
+                    }}
                 />
             )}
 
+            {/* Change Password Modal */}
             {showChangePassword && (
                 <ChangePasswordModal
                     onClose={() => setShowChangePassword(false)}
                     onSave={handleChangePassword}
                 />
             )}
-
         </div>
     );
 };
