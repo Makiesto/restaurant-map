@@ -1,11 +1,13 @@
 export interface User {
   id: number;
+  email: string;
   firstName: string;
   lastName: string;
-  email: string;
   phoneNumber?: string;
   role: 'USER' | 'VERIFIED_USER' | 'ADMIN';
   isActive: boolean;
+  emailVerified: boolean;
+  emailVerifiedAt?: string;
   createdAt: string;
   verifiedAt?: string;
 }
@@ -25,11 +27,11 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   token: string;
-  type: string;
   id: number;
   email: string;
   firstName: string;
   lastName: string;
   phoneNumber?: string;
   role: 'USER' | 'VERIFIED_USER' | 'ADMIN';
+  emailVerified: boolean;
 }

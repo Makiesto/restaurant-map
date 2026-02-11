@@ -228,6 +228,17 @@ class ApiService {
     async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
         await this.api.post('/users/me/change-password', data);
     }
+
+    // --- Email Verification ---
+    async verifyEmail(token: string): Promise<void> {
+        await this.api.post('/auth/verify-email', null, {
+            params: { token }
+        });
+    }
+
+    async resendVerificationEmail(email: string): Promise<void> {
+        await this.api.post('/auth/resend-verification', { email });
+    }
 }
 
 export const apiService = new ApiService();

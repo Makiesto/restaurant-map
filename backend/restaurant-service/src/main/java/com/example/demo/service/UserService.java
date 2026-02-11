@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+
 import com.example.demo.dto.user.ChangePasswordRequestDTO;
 import com.example.demo.dto.user.UpdateProfileRequestDTO;
 import com.example.demo.dto.user.UserRegistrationRequestDTO;
@@ -7,13 +8,14 @@ import com.example.demo.dto.user.UserResponseDTO;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.exception.ValidationException;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.demo.exception.ValidationException;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +28,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
     @Transactional
     public UserResponseDTO registerUser(UserRegistrationRequestDTO request) {
@@ -41,13 +44,23 @@ public class UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .role(Role.VERIFIED_USER) // TODO In future add some mechanism to verify users
+                .role(Role.USER) // Start as unverified user
                 .isActive(true)
+                .emailVerified(false)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with ID: {}", savedUser.getId());
+
+        // Send verification email
+        try {
+            emailVerificationService.sendVerificationEmail(savedUser);
+        } catch (Exception e) {
+            log.error("Failed to send verification email for user: {}", savedUser.getEmail(), e);
+            // Don't fail registration if email fails
+        }
+
         return mapToResponse(savedUser);
     }
 
@@ -157,6 +170,8 @@ public class UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
                 .isActive(user.getIsActive())
+                .emailVerified(user.getEmailVerified())
+                .emailVerifiedAt(user.getEmailVerifiedAt())
                 .createdAt(user.getCreatedAt())
                 .verifiedAt(user.getVerifiedAt())
                 .build();

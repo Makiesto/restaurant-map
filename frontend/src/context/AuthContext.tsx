@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Always fetch fresh user data from API instead of using stale localStorage
           await fetchCurrentUser(storedToken);
         } catch (error) {
-          console.error('Failed to load user, clearing auth');
+          console.error('Failed to load user, clearing auth ' + error);
           // If API call fails, user will be null (already handled in fetchCurrentUser)
         }
       } else {
