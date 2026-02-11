@@ -1,10 +1,15 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.user.ChangePasswordRequestDTO;
+import com.example.demo.dto.user.UpdateProfileRequestDTO;
 import com.example.demo.dto.user.UserResponseDTO;
 import com.example.demo.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,25 +21,38 @@ public class UserController {
 
     private final UserService userService;
 
-    /**
-     * AUTHENTICATED: Get current user info
-     * TODO: Get user ID from JWT token
-     */
-    @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> getCurrentUser(
-            @RequestHeader("User-Id") Long userId) { // TODO: Get from JWT token
-        log.info("GET /api/users/me - fetching user: {}", userId);
-        UserResponseDTO user = userService.getUserById(userId);
-        return ResponseEntity.ok(user);
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth.getName(); // email, set by CustomUserDetailsService
     }
 
-    /**
-     * AUTHENTICATED: Get user by ID
-     */
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getCurrentUser() {
+        String email = getCurrentUserEmail();
+        log.info("GET /api/users/me - {}", email);
+        return ResponseEntity.ok(userService.getUserByEmail(email));
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<UserResponseDTO> updateProfile(
+            @Valid @RequestBody UpdateProfileRequestDTO request) {
+        String email = getCurrentUserEmail();
+        log.info("PATCH /api/users/me - {}", email);
+        return ResponseEntity.ok(userService.updateProfileByEmail(email, request));
+    }
+
+    @PostMapping("/me/change-password")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequestDTO request) {
+        String email = getCurrentUserEmail();
+        log.info("POST /api/users/me/change-password - {}", email);
+        userService.changePasswordByEmail(email, request);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
-        log.info("GET /api/users/{} - fetching user", id);
-        UserResponseDTO user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
+        log.info("GET /api/users/{}", id);
+        return ResponseEntity.ok(userService.getUserById(id));
     }
 }

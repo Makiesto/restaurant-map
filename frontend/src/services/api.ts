@@ -1,212 +1,222 @@
-import axios, { type AxiosInstance, AxiosError } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from '../types/auth.types';
-import type { Restaurant, CreateRestaurantRequest } from '../types/restaurant.types';
-import type { Dish, CreateDishRequest } from '../types/dish.types';
-import type { Review, CreateReviewRequest, ReviewStats } from '../types/review.types';
-import type { AdminStats, VerifyRestaurantRequest } from '../types/admin.types';
-import type { Allergen } from '../types/allergen.types';
+import axios, {type AxiosInstance, AxiosError} from 'axios';
+import type {AuthResponse, LoginRequest, RegisterRequest, User} from '../types/auth.types';
+import type {Restaurant, CreateRestaurantRequest} from '../types/restaurant.types';
+import type {Dish, CreateDishRequest} from '../types/dish.types';
+import type {Review, CreateReviewRequest, ReviewStats} from '../types/review.types';
+import type {AdminStats, VerifyRestaurantRequest} from '../types/admin.types';
+import type {Allergen} from '../types/allergen.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 class ApiService {
-  private api: AxiosInstance;
+    private api: AxiosInstance;
 
-  constructor() {
-    this.api = axios.create({
-      baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    constructor() {
+        this.api = axios.create({
+            baseURL: API_BASE_URL,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
 
-    this.api.interceptors.request.use((config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
+        this.api.interceptors.request.use((config) => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+            return config;
+        });
 
-    this.api.interceptors.response.use(
-      (response) => response,
-      (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  // --- Auth ---
-  async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await this.api.post<AuthResponse>('/auth/login', data);
-    return response.data;
-  }
-
-  async register(data: RegisterRequest): Promise<User> {
-    const response = await this.api.post<User>('/auth/register', data);
-    return response.data;
-  }
-
-  // --- Restaurants ---
-  async getApprovedRestaurants(): Promise<Restaurant[]> {
-    const response = await this.api.get<Restaurant[]>('/restaurants');
-    return response.data;
-  }
-
-  async getRestaurantById(id: number): Promise<Restaurant> {
-    const response = await this.api.get<Restaurant>(`/restaurants/${id}`);
-    return response.data;
-  }
-
-  async getMyRestaurants(): Promise<Restaurant[]> {
-    const response = await this.api.get<Restaurant[]>('/restaurants/my');
-    return response.data;
-  }
-
-  async createRestaurant(data: CreateRestaurantRequest): Promise<Restaurant> {
-    const response = await this.api.post<Restaurant>('/restaurants', data);
-    return response.data;
-  }
-
-  async updateRestaurant(id: number, data: CreateRestaurantRequest): Promise<Restaurant> {
-    const response = await this.api.put<Restaurant>(`/restaurants/${id}`, data);
-    return response.data;
-  }
-
-  async deleteRestaurant(id: number): Promise<void> {
-    await this.api.delete(`/restaurants/${id}`);
-  }
-
-  // --- Dishes ---
-  async getRestaurantMenu(restaurantId: number): Promise<Dish[]> {
-    const response = await this.api.get<Dish[]>(`/restaurants/${restaurantId}/menu`);
-    return response.data;
-  }
-
-  async createDish(restaurantId: number, data: CreateDishRequest): Promise<Dish> {
-    const response = await this.api.post<Dish>(`/restaurants/${restaurantId}/dishes`, data);
-    return response.data;
-  }
-
-  async updateDish(dishId: number, data: CreateDishRequest): Promise<Dish> {
-    const response = await this.api.put<Dish>(`/dishes/${dishId}`, data);
-    return response.data;
-  }
-
-  async deleteDish(dishId: number): Promise<void> {
-    await this.api.delete(`/dishes/${dishId}`);
-  }
-
-  // --- Reviews ---
-  async getRestaurantReviews(restaurantId: number): Promise<Review[]> {
-    const response = await this.api.get<Review[]>(`/restaurants/${restaurantId}/reviews`);
-    return response.data;
-  }
-
-  async getRestaurantStats(restaurantId: number): Promise<ReviewStats> {
-    const response = await this.api.get<ReviewStats>(`/restaurants/${restaurantId}/reviews/stats`);
-    return response.data;
-  }
-
-  async getMyReviewForRestaurant(restaurantId: number): Promise<Review | null> {
-    try {
-      const response = await this.api.get<Review>(`/restaurants/${restaurantId}/reviews/my`);
-      return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        return null;
-      }
-      throw error;
+        this.api.interceptors.response.use(
+            (response) => response,
+            (error: AxiosError) => {
+                if (error.response?.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+                return Promise.reject(error);
+            }
+        );
     }
-  }
 
-  async getMyReviews(): Promise<Review[]> {
-    const response = await this.api.get<Review[]>('/reviews/my');
-    return response.data;
-  }
+    // --- Auth ---
+    async login(data: LoginRequest): Promise<AuthResponse> {
+        const response = await this.api.post<AuthResponse>('/auth/login', data);
+        return response.data;
+    }
 
-  async createReview(restaurantId: number, data: CreateReviewRequest): Promise<Review> {
-    const response = await this.api.post<Review>(`/restaurants/${restaurantId}/reviews`, data);
-    return response.data;
-  }
+    async register(data: RegisterRequest): Promise<User> {
+        const response = await this.api.post<User>('/auth/register', data);
+        return response.data;
+    }
 
-  async updateReview(reviewId: number, data: CreateReviewRequest): Promise<Review> {
-    const response = await this.api.put<Review>(`/reviews/${reviewId}`, data);
-    return response.data;
-  }
+    // --- Restaurants ---
+    async getApprovedRestaurants(): Promise<Restaurant[]> {
+        const response = await this.api.get<Restaurant[]>('/restaurants');
+        return response.data;
+    }
 
-  async deleteReview(reviewId: number): Promise<void> {
-    await this.api.delete(`/reviews/${reviewId}`);
-  }
+    async getRestaurantById(id: number): Promise<Restaurant> {
+        const response = await this.api.get<Restaurant>(`/restaurants/${id}`);
+        return response.data;
+    }
 
-  // --- Admin ---
-  async getAdminStats(): Promise<AdminStats> {
-    const response = await this.api.get<AdminStats>('/admin/stats');
-    return response.data;
-  }
+    async getMyRestaurants(): Promise<Restaurant[]> {
+        const response = await this.api.get<Restaurant[]>('/restaurants/my');
+        return response.data;
+    }
 
-  async getPendingRestaurants(): Promise<Restaurant[]> {
-    const response = await this.api.get<Restaurant[]>('/admin/restaurants/pending');
-    return response.data;
-  }
+    async createRestaurant(data: CreateRestaurantRequest): Promise<Restaurant> {
+        const response = await this.api.post<Restaurant>('/restaurants', data);
+        return response.data;
+    }
 
-  async getUnverifiedRestaurants(): Promise<Restaurant[]> {
-    const response = await this.api.get<Restaurant[]>('/admin/restaurants/unverified');
-    return response.data;
-  }
+    async updateRestaurant(id: number, data: CreateRestaurantRequest): Promise<Restaurant> {
+        const response = await this.api.put<Restaurant>(`/restaurants/${id}`, data);
+        return response.data;
+    }
 
-  async approveRestaurant(id: number): Promise<Restaurant> {
-    const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/approve`);
-    return response.data;
-  }
+    async deleteRestaurant(id: number): Promise<void> {
+        await this.api.delete(`/restaurants/${id}`);
+    }
 
-  async rejectRestaurant(id: number): Promise<Restaurant> {
-    const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/reject`);
-    return response.data;
-  }
+    // --- Dishes ---
+    async getRestaurantMenu(restaurantId: number): Promise<Dish[]> {
+        const response = await this.api.get<Dish[]>(`/restaurants/${restaurantId}/menu`);
+        return response.data;
+    }
 
-  async verifyRestaurant(id: number, data?: VerifyRestaurantRequest): Promise<Restaurant> {
-    const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/verify`, data || {});
-    return response.data;
-  }
+    async createDish(restaurantId: number, data: CreateDishRequest): Promise<Dish> {
+        const response = await this.api.post<Dish>(`/restaurants/${restaurantId}/dishes`, data);
+        return response.data;
+    }
 
-  async unverifyRestaurant(id: number): Promise<Restaurant> {
-    const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/unverify`);
-    return response.data;
-  }
+    async updateDish(dishId: number, data: CreateDishRequest): Promise<Dish> {
+        const response = await this.api.put<Dish>(`/dishes/${dishId}`, data);
+        return response.data;
+    }
 
-  async verifyReview(reviewId: number): Promise<Review> {
-    const response = await this.api.put<Review>(`/admin/reviews/${reviewId}/verify`);
-    return response.data;
-  }
+    async deleteDish(dishId: number): Promise<void> {
+        await this.api.delete(`/dishes/${dishId}`);
+    }
 
-  async getAllUsers(): Promise<User[]> {
-    const response = await this.api.get<User[]>('/admin/users');
-    return response.data;
-  }
+    // --- Reviews ---
+    async getRestaurantReviews(restaurantId: number): Promise<Review[]> {
+        const response = await this.api.get<Review[]>(`/restaurants/${restaurantId}/reviews`);
+        return response.data;
+    }
 
-  async verifyUser(userId: number): Promise<User> {
-    const response = await this.api.put<User>(`/admin/users/${userId}/verify`);
-    return response.data;
-  }
+    async getRestaurantStats(restaurantId: number): Promise<ReviewStats> {
+        const response = await this.api.get<ReviewStats>(`/restaurants/${restaurantId}/reviews/stats`);
+        return response.data;
+    }
 
-  // --- Allergens ---
-  async getAllAllergens(): Promise<Allergen[]> {
-    const response = await this.api.get<Allergen[]>('/allergens');
-    return response.data;
-  }
+    async getMyReviewForRestaurant(restaurantId: number): Promise<Review | null> {
+        try {
+            const response = await this.api.get<Review>(`/restaurants/${restaurantId}/reviews/my`);
+            return response.data;
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error) && error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    }
 
-  async getUserAllergens(): Promise<Allergen[]> {
-    const response = await this.api.get<Allergen[]>('/users/me/allergens');
-    return response.data;
-  }
+    async getMyReviews(): Promise<Review[]> {
+        const response = await this.api.get<Review[]>('/reviews/my');
+        return response.data;
+    }
 
-  async updateUserAllergens(allergenNames: string[]): Promise<void> {
-    await this.api.put('/users/me/allergens', { allergenNames });
-  }
+    async createReview(restaurantId: number, data: CreateReviewRequest): Promise<Review> {
+        const response = await this.api.post<Review>(`/restaurants/${restaurantId}/reviews`, data);
+        return response.data;
+    }
+
+    async updateReview(reviewId: number, data: CreateReviewRequest): Promise<Review> {
+        const response = await this.api.put<Review>(`/reviews/${reviewId}`, data);
+        return response.data;
+    }
+
+    async deleteReview(reviewId: number): Promise<void> {
+        await this.api.delete(`/reviews/${reviewId}`);
+    }
+
+    // --- Admin ---
+    async getAdminStats(): Promise<AdminStats> {
+        const response = await this.api.get<AdminStats>('/admin/stats');
+        return response.data;
+    }
+
+    async getPendingRestaurants(): Promise<Restaurant[]> {
+        const response = await this.api.get<Restaurant[]>('/admin/restaurants/pending');
+        return response.data;
+    }
+
+    async getUnverifiedRestaurants(): Promise<Restaurant[]> {
+        const response = await this.api.get<Restaurant[]>('/admin/restaurants/unverified');
+        return response.data;
+    }
+
+    async approveRestaurant(id: number): Promise<Restaurant> {
+        const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/approve`);
+        return response.data;
+    }
+
+    async rejectRestaurant(id: number): Promise<Restaurant> {
+        const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/reject`);
+        return response.data;
+    }
+
+    async verifyRestaurant(id: number, data?: VerifyRestaurantRequest): Promise<Restaurant> {
+        const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/verify`, data || {});
+        return response.data;
+    }
+
+    async unverifyRestaurant(id: number): Promise<Restaurant> {
+        const response = await this.api.put<Restaurant>(`/admin/restaurants/${id}/unverify`);
+        return response.data;
+    }
+
+    async verifyReview(reviewId: number): Promise<Review> {
+        const response = await this.api.put<Review>(`/admin/reviews/${reviewId}/verify`);
+        return response.data;
+    }
+
+    async getAllUsers(): Promise<User[]> {
+        const response = await this.api.get<User[]>('/admin/users');
+        return response.data;
+    }
+
+    async verifyUser(userId: number): Promise<User> {
+        const response = await this.api.put<User>(`/admin/users/${userId}/verify`);
+        return response.data;
+    }
+
+    // --- Allergens ---
+    async getAllAllergens(): Promise<Allergen[]> {
+        const response = await this.api.get<Allergen[]>('/allergens');
+        return response.data;
+    }
+
+    async getUserAllergens(): Promise<Allergen[]> {
+        const response = await this.api.get<Allergen[]>('/users/me/allergens');
+        return response.data;
+    }
+
+    async updateUserAllergens(allergenNames: string[]): Promise<void> {
+        await this.api.put('/users/me/allergens', {allergenNames});
+    }
+
+    // --- Profile ---
+    async updateProfile(data: { firstName: string; lastName: string; phoneNumber?: string }): Promise<User> {
+        const response = await this.api.patch<User>('/users/me', data);
+        return response.data;
+    }
+
+    async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+        await this.api.post('/users/me/change-password', data);
+    }
 }
 
 export const apiService = new ApiService();

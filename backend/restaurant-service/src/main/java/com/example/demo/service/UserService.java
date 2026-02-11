@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
-
+import com.example.demo.dto.user.ChangePasswordRequestDTO;
+import com.example.demo.dto.user.UpdateProfileRequestDTO;
 import com.example.demo.dto.user.UserRegistrationRequestDTO;
 import com.example.demo.dto.user.UserResponseDTO;
 import com.example.demo.entity.Role;
@@ -18,8 +19,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static io.jsonwebtoken.security.Keys.password;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +31,6 @@ public class UserService {
     public UserResponseDTO registerUser(UserRegistrationRequestDTO request) {
         log.info("Registering new user with email: {}", request.getEmail());
 
-        // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ValidationException("Email already registered");
         }
@@ -50,7 +48,6 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with ID: {}", savedUser.getId());
-
         return mapToResponse(savedUser);
     }
 
@@ -78,27 +75,43 @@ public class UserService {
     @Transactional
     public UserResponseDTO verifyUser(Long userId) {
         log.info("Verifying user with ID: {}", userId);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         user.setRole(Role.VERIFIED_USER);
         user.setVerifiedAt(LocalDateTime.now());
+        return mapToResponse(userRepository.save(user));
+    }
 
-        User savedUser = userRepository.save(user);
-        log.info("User verified successfully: {}", userId);
+    @Transactional
+    public UserResponseDTO updateProfileByEmail(String email, UpdateProfileRequestDTO request) {
+        log.info("Updating profile for user: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhoneNumber(request.getPhoneNumber());
+        return mapToResponse(userRepository.save(user));
+    }
 
-        return mapToResponse(savedUser);
+    @Transactional
+    public void changePasswordByEmail(String email, ChangePasswordRequestDTO request) {
+        log.info("Changing password for user: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new ValidationException("Current password is incorrect");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     @Transactional
     public void deleteUser(Long userId) {
         log.info("Deleting user with ID: {}", userId);
-
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with ID: " + userId);
         }
-
         userRepository.deleteById(userId);
         log.info("User deleted successfully: {}", userId);
     }
