@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.user.ResendVerificationRequestDTO;
 import com.example.demo.service.EmailVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
