@@ -1,18 +1,74 @@
 version: '3.8'
 
 services:
-  postgres-restaurants:
-    image: postgres:15-alpine
+  postgres:
+    image: postgres:16-alpine
     container_name: restaurant-db
     environment:
-      POSTGRES_DB: ${POSTGRES_RESTAURANT_DB:-restaurant_map_db} 
-      POSTGRES_USER: ${POSTGRES_USER1:-matt}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD1:-supersecret}
+      POSTGRES_DB: ${POSTGRES_DB:-restaurant_map_db}
+      POSTGRES_USER: ${POSTGRES_USER:-matt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
     ports:
       - "5442:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-matt}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant-network
+
+  backend:
+    build:
+      context: ./backend/restaurant-service
+      dockerfile: Dockerfile
+    container_name: restaurant-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-restaurant_map_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-matt}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
+      JWT_SECRET: ${JWT_SECRET}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      MAILTRAP_USERNAME: ${MAILTRAP_USERNAME}
+      MAILTRAP_PASSWORD: ${MAILTRAP_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - restaurant-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+    container_name: restaurant-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - restaurant-network
     restart: unless-stopped
 
 volumes:
-    postgres_data:
+  postgres_data:
+
+networks:
+  restaurant-network:
+    driver: bridge
