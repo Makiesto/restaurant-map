@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
@@ -260,7 +261,7 @@ class UserControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "USER")
     void deleteUser_WithUserRole_ShouldReturnForbidden() throws Exception {
-        // When/Then
+        // When/Then - This is the failing test, now fixed with @Import annotation
         mockMvc.perform(delete("/api/users/1")
                 .with(csrf()))
                 .andExpect(status().isForbidden());

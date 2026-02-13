@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -45,6 +46,15 @@ public class SecurityConfig {
 
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // User "me" endpoints - must come BEFORE numeric ID patterns to take precedence
+                        .requestMatchers("/api/users/me/**").authenticated()
+                        .requestMatchers("/api/users/me").authenticated()
+
+                        // IMPORTANT: Admin-only user management endpoints (numeric IDs)
+                        // Must use RegexRequestMatcher for numeric-only matching
+                        .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "DELETE")).hasRole("ADMIN")
+                        .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "GET")).hasRole("ADMIN")
 
                         // Verified user endpoints (admins can also do these)
                         .requestMatchers(HttpMethod.POST, "/api/restaurants").hasAnyRole("VERIFIED_USER", "ADMIN")
