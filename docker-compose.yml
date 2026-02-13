@@ -2,34 +2,37 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:18-alpine
-    container_name: restaurant-db
+    image: postgres:16-alpine
+    container_name: restaurant-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-restaurant_map_db}
-      POSTGRES_USER: ${POSTGRES_USER:-matt}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
+      POSTGRES_DB: ${POSTGRES_RESTAURANT_DB:-restaurant_map_db}
+      POSTGRES_USER: ${POSTGRES_USER1:-matt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD1:-supersecret}
     ports:
       - "5442:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d
+      - ./backend/restaurant-service/src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - restaurant-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-matt}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER1:-matt}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - restaurant-network
 
   backend:
     build:
       context: ./backend/restaurant-service
       dockerfile: Dockerfile
     container_name: restaurant-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-restaurant_map_db}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-matt}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_RESTAURANT_DB:-restaurant_map_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER1:-matt}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD1:-supersecret}
       JWT_SECRET: ${JWT_SECRET}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
@@ -39,35 +42,74 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
     ports:
       - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    networks:
+      - restaurant-network
+    volumes:
+      - ./backend/restaurant-service/uploads:/app/uploads
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    networks:
-      - restaurant-network
-    restart: unless-stopped
+      start_period: 40s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
     container_name: restaurant-frontend
-    ports:
-      - "80:80"
     depends_on:
       - backend
+    ports:
+      - "5173:80"
     networks:
       - restaurant-network
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: restaurant-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - restaurant-network
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PgAdmin for database management (dev only)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: restaurant-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@restaurant.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    networks:
+      - restaurant-network
+    depends_on:
+      - postgres
+    profiles:
+      - dev
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
 
 networks:
   restaurant-network:
