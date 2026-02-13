@@ -18,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +26,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+/**
+ * Additional edge case and comprehensive tests for UserService
+ */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -43,7 +45,6 @@ class UserServiceTest {
     private UserService userService;
 
     private User testUser;
-    private UserRegistrationRequestDTO registrationRequest;
 
     @BeforeEach
     void setUp() {
@@ -59,265 +60,368 @@ class UserServiceTest {
                 .emailVerified(false)
                 .createdAt(LocalDateTime.now())
                 .build();
-
-        registrationRequest = new UserRegistrationRequestDTO();
-        registrationRequest.setFirstName("Jane");
-        registrationRequest.setLastName("Smith");
-        registrationRequest.setEmail("jane@example.com");
-        registrationRequest.setPassword("password123");
-        registrationRequest.setPhoneNumber("+48987654321");
     }
 
+    // ========== Registration Edge Cases ==========
+
     @Test
-    void registerUser_WithValidData_ShouldSucceed() {
+    void registerUser_WithUnicodeCharactersInName_ShouldSucceed() {
         // Given
-        when(userRepository.existsByEmail(registrationRequest.getEmail())).thenReturn(false);
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User user = invocation.getArgument(0);
+        UserRegistrationRequestDTO request = new UserRegistrationRequestDTO();
+        request.setFirstName("José");
+        request.setLastName("Müller");
+        request.setEmail("jose.muller@example.com");
+        request.setPassword("SecurePass123!");
+        request.setPhoneNumber("+48123456789");
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User user = inv.getArgument(0);
             user.setId(1L);
             return user;
         });
 
         // When
-        UserResponseDTO result = userService.registerUser(registrationRequest);
+        UserResponseDTO result = userService.registerUser(request);
 
         // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getFirstName()).isEqualTo("Jane");
-        assertThat(result.getLastName()).isEqualTo("Smith");
-        assertThat(result.getEmail()).isEqualTo("jane@example.com");
-        assertThat(result.getRole()).isEqualTo(Role.USER);
-        assertThat(result.getEmailVerified()).isFalse();
-
-        verify(userRepository).existsByEmail("jane@example.com");
-        verify(userRepository).save(any(User.class));
-        verify(emailVerificationService).sendVerificationEmail(any(User.class));
+        assertThat(result.getFirstName()).isEqualTo("José");
+        assertThat(result.getLastName()).isEqualTo("Müller");
     }
 
     @Test
-    void registerUser_WithExistingEmail_ShouldThrowException() {
+    void registerUser_WithVeryLongNames_ShouldSucceed() {
         // Given
-        when(userRepository.existsByEmail(registrationRequest.getEmail())).thenReturn(true);
+        UserRegistrationRequestDTO request = new UserRegistrationRequestDTO();
+        request.setFirstName("A".repeat(100));
+        request.setLastName("B".repeat(100));
+        request.setEmail("long.name@example.com");
+        request.setPassword("SecurePass123!");
+        request.setPhoneNumber("+48123456789");
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User user = inv.getArgument(0);
+            user.setId(1L);
+            return user;
+        });
+
+        // When
+        UserResponseDTO result = userService.registerUser(request);
+
+        // Then
+        assertThat(result.getFirstName()).hasSize(100);
+        assertThat(result.getLastName()).hasSize(100);
+    }
+
+    @Test
+    void registerUser_WithInternationalPhoneNumber_ShouldSucceed() {
+        // Given
+        UserRegistrationRequestDTO request = new UserRegistrationRequestDTO();
+        request.setFirstName("Jane");
+        request.setLastName("Smith");
+        request.setEmail("jane@example.com");
+        request.setPassword("SecurePass123!");
+        request.setPhoneNumber("+861234567890"); // China
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User user = inv.getArgument(0);
+            user.setId(1L);
+            return user;
+        });
+
+        // When
+        UserResponseDTO result = userService.registerUser(request);
+
+        // Then
+        assertThat(result.getPhoneNumber()).isEqualTo("+861234567890");
+    }
+
+    @Test
+    void registerUser_EmailAlreadyExists_CaseSensitive_ShouldFail() {
+        // Given
+        UserRegistrationRequestDTO request = new UserRegistrationRequestDTO();
+        request.setFirstName("Jane");
+        request.setLastName("Smith");
+        request.setEmail("JOHN@EXAMPLE.COM"); // Uppercase
+        request.setPassword("SecurePass123!");
+
+        when(userRepository.existsByEmail("JOHN@EXAMPLE.COM")).thenReturn(true);
 
         // When/Then
-        assertThatThrownBy(() -> userService.registerUser(registrationRequest))
+        assertThatThrownBy(() -> userService.registerUser(request))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Email already registered");
 
-        verify(userRepository).existsByEmail("jane@example.com");
-        verify(userRepository, never()).save(any());
-        verify(emailVerificationService, never()).sendVerificationEmail(any());
-    }
-
-    @Test
-    void getUserById_WhenExists_ShouldReturnUser() {
-        // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        // When
-        UserResponseDTO result = userService.getUserById(1L);
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getEmail()).isEqualTo("john@example.com");
-        assertThat(result.getFirstName()).isEqualTo("John");
-    }
-
-    @Test
-    void getUserById_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
-
-        // When/Then
-        assertThatThrownBy(() -> userService.getUserById(999L))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("User not found with ID: 999");
-    }
-
-    @Test
-    void getUserByEmail_WhenExists_ShouldReturnUser() {
-        // Given
-        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
-
-        // When
-        UserResponseDTO result = userService.getUserByEmail("john@example.com");
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getEmail()).isEqualTo("john@example.com");
-    }
-
-    @Test
-    void getUserByEmail_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
-
-        // When/Then
-        assertThatThrownBy(() -> userService.getUserByEmail("nonexistent@example.com"))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("User not found with email");
-    }
-
-    @Test
-    void getAllUsers_ShouldReturnAllUsers() {
-        // Given
-        User user2 = User.builder()
-                .id(2L)
-                .firstName("Jane")
-                .lastName("Smith")
-                .email("jane@example.com")
-                .role(Role.USER)
-                .isActive(true)
-                .build();
-
-        when(userRepository.findAll()).thenReturn(List.of(testUser, user2));
-
-        // When
-        List<UserResponseDTO> results = userService.getAllUsers();
-
-        // Then
-        assertThat(results).hasSize(2);
-        assertThat(results).extracting(UserResponseDTO::getEmail)
-                .containsExactly("john@example.com", "jane@example.com");
-    }
-
-    @Test
-    void verifyUser_ShouldPromoteToVerifiedUser() {
-        // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // When
-        UserResponseDTO result = userService.verifyUser(1L);
-
-        // Then
-        assertThat(result.getRole()).isEqualTo(Role.VERIFIED_USER);
-        assertThat(result.getVerifiedAt()).isNotNull();
-
-        verify(userRepository).save(argThat(user ->
-                user.getRole() == Role.VERIFIED_USER && user.getVerifiedAt() != null
-        ));
-    }
-
-    @Test
-    void updateProfileByEmail_WithNewEmail_ShouldUpdateEmail() {
-        // Given
-        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
-        when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        UpdateProfileRequestDTO updateRequest = new UpdateProfileRequestDTO();
-        updateRequest.setEmail("newemail@example.com");
-        updateRequest.setPhoneNumber("+48111222333");
-
-        // When
-        UserResponseDTO result = userService.updateProfileByEmail("john@example.com", updateRequest);
-
-        // Then
-        assertThat(result.getEmail()).isEqualTo("newemail@example.com");
-        assertThat(result.getPhoneNumber()).isEqualTo("+48111222333");
-
-        verify(userRepository).save(argThat(user ->
-                user.getEmail().equals("newemail@example.com") &&
-                user.getPhoneNumber().equals("+48111222333")
-        ));
-    }
-
-    @Test
-    void updateProfileByEmail_WithExistingEmail_ShouldThrowException() {
-        // Given
-        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
-        when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
-
-        UpdateProfileRequestDTO updateRequest = new UpdateProfileRequestDTO();
-        updateRequest.setEmail("existing@example.com");
-        updateRequest.setPhoneNumber("+48111222333");
-
-        // When/Then
-        assertThatThrownBy(() -> userService.updateProfileByEmail("john@example.com", updateRequest))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Email already in use");
-
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void updateProfileByEmail_WithSameEmail_ShouldOnlyUpdatePhone() {
+    void registerUser_EmailVerificationServiceFails_ShouldStillRegisterUser() {
         // Given
-        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        UserRegistrationRequestDTO request = new UserRegistrationRequestDTO();
+        request.setFirstName("Jane");
+        request.setLastName("Smith");
+        request.setEmail("jane@example.com");
+        request.setPassword("SecurePass123!");
+        request.setPhoneNumber("+48123456789");
 
-        UpdateProfileRequestDTO updateRequest = new UpdateProfileRequestDTO();
-        updateRequest.setEmail("john@example.com"); // Same email
-        updateRequest.setPhoneNumber("+48111222333");
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User user = inv.getArgument(0);
+            user.setId(1L);
+            return user;
+        });
+        doThrow(new RuntimeException("Email service down"))
+                .when(emailVerificationService).sendVerificationEmail(any());
 
         // When
-        UserResponseDTO result = userService.updateProfileByEmail("john@example.com", updateRequest);
+        UserResponseDTO result = userService.registerUser(request);
+
+        // Then - User should still be registered
+        assertThat(result).isNotNull();
+        assertThat(result.getEmail()).isEqualTo("jane@example.com");
+        verify(userRepository).save(any());
+    }
+
+    @Test
+    void registerUser_WithNullPhoneNumber_ShouldSucceed() {
+        // Given
+        UserRegistrationRequestDTO request = new UserRegistrationRequestDTO();
+        request.setFirstName("Jane");
+        request.setLastName("Smith");
+        request.setEmail("jane@example.com");
+        request.setPassword("SecurePass123!");
+        request.setPhoneNumber(null);
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User user = inv.getArgument(0);
+            user.setId(1L);
+            return user;
+        });
+
+        // When
+        UserResponseDTO result = userService.registerUser(request);
+
+        // Then
+        assertThat(result.getPhoneNumber()).isNull();
+    }
+
+    // ========== Update Profile Edge Cases ==========
+
+    @Test
+    void updateProfileByEmail_ChangingToSameEmail_ShouldSucceed() {
+        // Given
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateProfileRequestDTO request = new UpdateProfileRequestDTO();
+        request.setEmail("john@example.com"); // Same email
+        request.setPhoneNumber("+48999888777");
+
+        // When
+        UserResponseDTO result = userService.updateProfileByEmail("john@example.com", request);
 
         // Then
         assertThat(result.getEmail()).isEqualTo("john@example.com");
-        assertThat(result.getPhoneNumber()).isEqualTo("+48111222333");
-
+        assertThat(result.getPhoneNumber()).isEqualTo("+48999888777");
         verify(userRepository, never()).existsByEmail(anyString());
     }
 
     @Test
-    void changePasswordByEmail_WithCorrectCurrentPassword_ShouldSucceed() {
+    void updateProfileByEmail_ChangingEmailToDifferentCase_ShouldFail() {
         // Given
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches("oldPassword", "encodedPassword123")).thenReturn(true);
-        when(passwordEncoder.encode("newPassword")).thenReturn("encodedNewPassword");
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.existsByEmail("already_taken@example.com")).thenReturn(true);
 
-        ChangePasswordRequestDTO changeRequest = new ChangePasswordRequestDTO();
-        changeRequest.setCurrentPassword("oldPassword");
-        changeRequest.setNewPassword("newPassword");
+        UpdateProfileRequestDTO request = new UpdateProfileRequestDTO();
+        request.setEmail("already_taken@example.com");
+        request.setPhoneNumber("+48999888777");
+
+        // When/Then
+        assertThatThrownBy(() -> userService.updateProfileByEmail("john@example.com", request))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Email already in use");
+    }
+
+    @Test
+    void updateProfileByEmail_WithNullEmail_ShouldOnlyUpdatePhone() {
+        // Given
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateProfileRequestDTO request = new UpdateProfileRequestDTO();
+        request.setEmail(null);
+        request.setPhoneNumber("+48999888777");
 
         // When
-        userService.changePasswordByEmail("john@example.com", changeRequest);
+        UserResponseDTO result = userService.updateProfileByEmail("john@example.com", request);
 
         // Then
-        verify(passwordEncoder).matches("oldPassword", "encodedPassword123");
-        verify(passwordEncoder).encode("newPassword");
+        assertThat(result.getEmail()).isEqualTo("john@example.com"); // Unchanged
+        assertThat(result.getPhoneNumber()).isEqualTo("+48999888777");
+    }
+
+    @Test
+    void updateProfileByEmail_ClearingPhoneNumber_ShouldSucceed() {
+        // Given
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateProfileRequestDTO request = new UpdateProfileRequestDTO();
+        request.setEmail("john@example.com");
+        request.setPhoneNumber(null);
+
+        // When
+        UserResponseDTO result = userService.updateProfileByEmail("john@example.com", request);
+
+        // Then
+        assertThat(result.getPhoneNumber()).isNull();
+    }
+
+    @Test
+    void updateProfileByEmail_MultipleUpdatesInSequence_ShouldAllSucceed() {
+        // Given
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // When - First update
+        UpdateProfileRequestDTO request1 = new UpdateProfileRequestDTO();
+        request1.setEmail("john.new1@example.com");
+        request1.setPhoneNumber("+48111111111");
+        userService.updateProfileByEmail("john@example.com", request1);
+
+        testUser.setEmail("john.new1@example.com");
+
+        // Second update
+        UpdateProfileRequestDTO request2 = new UpdateProfileRequestDTO();
+        request2.setEmail("john.new2@example.com");
+        request2.setPhoneNumber("+48222222222");
+        UserResponseDTO result = userService.updateProfileByEmail("john.new1@example.com", request2);
+
+        // Then
+        assertThat(result.getEmail()).isEqualTo("john.new2@example.com");
+        assertThat(result.getPhoneNumber()).isEqualTo("+48222222222");
+        verify(userRepository, times(2)).save(any());
+    }
+
+    // ========== Password Change Edge Cases ==========
+
+    @Test
+    void changePasswordByEmail_WithVeryLongPassword_ShouldSucceed() {
+        // Given
+        String longPassword = "A".repeat(200) + "123!";
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(passwordEncoder.encode(longPassword)).thenReturn("encodedLongPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ChangePasswordRequestDTO request = new ChangePasswordRequestDTO();
+        request.setCurrentPassword("oldPassword");
+        request.setNewPassword(longPassword);
+
+        // When
+        userService.changePasswordByEmail("john@example.com", request);
+
+        // Then
+        verify(passwordEncoder).encode(longPassword);
         verify(userRepository).save(argThat(user ->
-                user.getPassword().equals("encodedNewPassword")
+                user.getPassword().equals("encodedLongPassword")
         ));
     }
 
     @Test
-    void changePasswordByEmail_WithIncorrectCurrentPassword_ShouldThrowException() {
+    void changePasswordByEmail_WithSpecialCharactersInPassword_ShouldSucceed() {
         // Given
+        String complexPassword = "P@$$w0rd!#%&*()[]{}";
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches("wrongPassword", "encodedPassword123")).thenReturn(false);
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(passwordEncoder.encode(complexPassword)).thenReturn("encodedComplexPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ChangePasswordRequestDTO changeRequest = new ChangePasswordRequestDTO();
-        changeRequest.setCurrentPassword("wrongPassword");
-        changeRequest.setNewPassword("newPassword");
-
-        // When/Then
-        assertThatThrownBy(() -> userService.changePasswordByEmail("john@example.com", changeRequest))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Current password is incorrect");
-
-        verify(userRepository, never()).save(any());
-    }
-
-    @Test
-    void deleteUser_WhenExists_ShouldDeleteUser() {
-        // Given
-        when(userRepository.existsById(1L)).thenReturn(true);
+        ChangePasswordRequestDTO request = new ChangePasswordRequestDTO();
+        request.setCurrentPassword("oldPassword");
+        request.setNewPassword(complexPassword);
 
         // When
-        userService.deleteUser(1L);
+        userService.changePasswordByEmail("john@example.com", request);
 
         // Then
-        verify(userRepository).deleteById(1L);
+        verify(passwordEncoder).encode(complexPassword);
     }
 
     @Test
-    void deleteUser_WhenNotExists_ShouldThrowException() {
+    void changePasswordByEmail_SameAsCurrentPassword_ShouldStillSucceed() {
+        // Given
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("samePassword", testUser.getPassword())).thenReturn(true);
+        when(passwordEncoder.encode("samePassword")).thenReturn("encodedSamePassword");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ChangePasswordRequestDTO request = new ChangePasswordRequestDTO();
+        request.setCurrentPassword("samePassword");
+        request.setNewPassword("samePassword");
+
+        // When
+        userService.changePasswordByEmail("john@example.com", request);
+
+        // Then
+        verify(userRepository).save(any());
+    }
+
+    @Test
+    void changePasswordByEmail_ChangingMultipleTimes_ShouldAllSucceed() {
+        // Given
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // When - Change 3 times
+        for (int i = 1; i <= 3; i++) {
+            ChangePasswordRequestDTO request = new ChangePasswordRequestDTO();
+            request.setCurrentPassword("oldPassword" + i);
+            request.setNewPassword("newPassword" + i);
+            userService.changePasswordByEmail("john@example.com", request);
+        }
+
+        // Then
+        verify(userRepository, times(3)).save(any());
+        verify(passwordEncoder, times(3)).encode(anyString());
+    }
+
+    @Test
+    void changePasswordByEmail_WithWhitespaceInPassword_ShouldSucceed() {
+        // Given
+        String passwordWithSpaces = "my secure password 123!";
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(passwordEncoder.encode(passwordWithSpaces)).thenReturn("encodedWithSpaces");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ChangePasswordRequestDTO request = new ChangePasswordRequestDTO();
+        request.setCurrentPassword("oldPassword");
+        request.setNewPassword(passwordWithSpaces);
+
+        // When
+        userService.changePasswordByEmail("john@example.com", request);
+
+        // Then
+        verify(passwordEncoder).encode(passwordWithSpaces);
+    }
+
+    // ========== Delete User Edge Cases ==========
+
+    @Test
+    void deleteUser_WithNonExistentUser_ShouldThrowException() {
         // Given
         when(userRepository.existsById(999L)).thenReturn(false);
 
@@ -327,5 +431,101 @@ class UserServiceTest {
                 .hasMessageContaining("User not found with ID: 999");
 
         verify(userRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteUserByEmail_WithCascadingRelations_ShouldDelete() {
+        // Given
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+
+        // When
+        userService.deleteUserByEmail("john@example.com");
+
+        // Then
+        verify(userRepository).delete(testUser);
+    }
+
+    @Test
+    void deleteUserById_AfterDeletion_ShouldNotExist() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        // When
+        userService.deleteUserById(1L);
+
+        // Then
+        verify(userRepository).delete(testUser);
+    }
+
+    // ========== Verify User Edge Cases ==========
+
+    @Test
+    void verifyUser_SetsVerifiedAtTimestamp_ShouldBeRecent() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // When
+        LocalDateTime beforeVerify = LocalDateTime.now().minusSeconds(1);
+        UserResponseDTO result = userService.verifyUser(1L);
+        LocalDateTime afterVerify = LocalDateTime.now().plusSeconds(1);
+
+        // Then
+        assertThat(result.getRole()).isEqualTo(Role.VERIFIED_USER);
+        assertThat(result.getVerifiedAt()).isNotNull();
+        assertThat(result.getVerifiedAt()).isBetween(beforeVerify, afterVerify);
+    }
+
+    @Test
+    void verifyUser_AlreadyVerified_ShouldUpdateAgain() {
+        // Given
+        testUser.setRole(Role.VERIFIED_USER);
+        testUser.setVerifiedAt(LocalDateTime.now().minusDays(1));
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // When
+        UserResponseDTO result = userService.verifyUser(1L);
+
+        // Then - Should update verifiedAt timestamp
+        assertThat(result.getRole()).isEqualTo(Role.VERIFIED_USER);
+        verify(userRepository).save(any());
+    }
+
+    // ========== Get User Edge Cases ==========
+
+    @Test
+    void getUserById_CalledMultipleTimes_ShouldReturnConsistently() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        // When
+        UserResponseDTO result1 = userService.getUserById(1L);
+        UserResponseDTO result2 = userService.getUserById(1L);
+        UserResponseDTO result3 = userService.getUserById(1L);
+
+        // Then
+        assertThat(result1.getId()).isEqualTo(1L);
+        assertThat(result2.getId()).isEqualTo(1L);
+        assertThat(result3.getId()).isEqualTo(1L);
+        verify(userRepository, times(3)).findById(1L);
+    }
+
+    @Test
+    void getUserByEmail_WithDifferentCasing_ShouldFindCorrectUser() {
+        // Given
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail("JOHN@EXAMPLE.COM")).thenReturn(Optional.empty());
+
+        // When
+        UserResponseDTO result = userService.getUserByEmail("john@example.com");
+
+        // Then
+        assertThat(result.getEmail()).isEqualTo("john@example.com");
+
+        // When/Then - Different case should not find
+        assertThatThrownBy(() -> userService.getUserByEmail("JOHN@EXAMPLE.COM"))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

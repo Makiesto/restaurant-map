@@ -38,7 +38,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // User "me" endpoints - must come BEFORE numeric ID patterns to take precedence
+                        .requestMatchers("/api/restaurants/my").authenticated()
+                        .requestMatchers("/api/users/me/**").authenticated()
+                        .requestMatchers("/api/users/me").authenticated()
+
                         .requestMatchers(HttpMethod.GET, "/api/restaurants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/*/menu").permitAll()
@@ -48,17 +55,10 @@ public class SecurityConfig {
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // User "me" endpoints - must come BEFORE numeric ID patterns to take precedence
-                        .requestMatchers("/api/users/me/**").authenticated()
-                        .requestMatchers("/api/users/me").authenticated()
-
                         // IMPORTANT: Admin-only user management endpoints (numeric IDs)
                         // Must use RegexRequestMatcher for numeric-only matching
                         .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "DELETE")).hasRole("ADMIN")
                         .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "GET")).hasRole("ADMIN")
-
-                        // File upload endpoints - require authentication
-                        .requestMatchers("/api/upload/**").authenticated()
 
                         // Verified user endpoints (admins can also do these)
                         .requestMatchers(HttpMethod.POST, "/api/restaurants").hasAnyRole("VERIFIED_USER", "ADMIN")
@@ -68,7 +68,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/dishes/*").hasAnyRole("VERIFIED_USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/dishes/*").hasAnyRole("VERIFIED_USER", "ADMIN")
 
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*/menu").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/dishes/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/allergens").permitAll()
+
                         // All other endpoints require authentication
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/upload/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
@@ -82,7 +90,7 @@ public class SecurityConfig {
                             response.setStatus(403);
                             response.setContentType("application/json");
                             response.getWriter().write("{\"error\":\"Access Denied\",\"message\":\"" +
-                                accessDeniedException.getMessage() + "\"}");
+                                    accessDeniedException.getMessage() + "\"}");
                         })
                 );
 
