@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/*/menu").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/dishes/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/allergens").permitAll()  // Public allergens list
 
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -55,6 +56,9 @@ public class SecurityConfig {
                         // Must use RegexRequestMatcher for numeric-only matching
                         .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "DELETE")).hasRole("ADMIN")
                         .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "GET")).hasRole("ADMIN")
+
+                        // File upload endpoints - require authentication
+                        .requestMatchers("/api/upload/**").authenticated()
 
                         // Verified user endpoints (admins can also do these)
                         .requestMatchers(HttpMethod.POST, "/api/restaurants").hasAnyRole("VERIFIED_USER", "ADMIN")
