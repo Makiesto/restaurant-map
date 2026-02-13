@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import com.example.demo.dto.user.*;
 import com.example.demo.entity.Role;
 import com.example.demo.service.UserService;
-import com.example.demo.security.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +37,6 @@ class UserControllerIntegrationTest {
 
     @MockitoBean
     private UserService userService;
-
-    @MockitoBean
-    private SecurityUtil securityUtil;
 
     private UserResponseDTO testUserDTO;
     private UserRegistrationRequestDTO registrationRequest;
@@ -133,11 +129,10 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "john@example.com")
     void getMyProfile_ShouldReturnCurrentUser() throws Exception {
         // Given
-        when(securityUtil.getCurrentUserId()).thenReturn(1L);
-        when(userService.getUserById(1L)).thenReturn(testUserDTO);
+        when(userService.getUserByEmail("john@example.com")).thenReturn(testUserDTO);
 
         // When/Then
         mockMvc.perform(get("/api/users/me"))
@@ -181,16 +176,15 @@ class UserControllerIntegrationTest {
         when(userService.getUserById(1L)).thenReturn(testUserDTO);
 
         // When/Then
-        mockMvc.perform(get("/api/admin/users/1"))
+        mockMvc.perform(get("/api/users/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "john@example.com")
     void updateProfile_WithValidData_ShouldReturnUpdated() throws Exception {
         // Given
-        when(securityUtil.getCurrentUserEmail()).thenReturn("john@example.com");
         testUserDTO.setEmail("newemail@example.com");
         when(userService.updateProfileByEmail(eq("john@example.com"), any()))
                 .thenReturn(testUserDTO);
@@ -205,13 +199,10 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "john@example.com")
     void changePassword_WithValidData_ShouldReturnNoContent() throws Exception {
-        // Given
-        when(securityUtil.getCurrentUserEmail()).thenReturn("john@example.com");
-
         // When/Then
-        mockMvc.perform(put("/api/users/me/password")
+        mockMvc.perform(put("/api/users/me/change-password")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(changePasswordRequest)))
@@ -219,7 +210,7 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "john@example.com")
     void changePassword_WithMissingCurrentPassword_ShouldReturnBadRequest() throws Exception {
         // Given
         ChangePasswordRequestDTO invalidRequest = new ChangePasswordRequestDTO();
@@ -227,7 +218,7 @@ class UserControllerIntegrationTest {
         // Missing currentPassword
 
         // When/Then
-        mockMvc.perform(put("/api/users/me/password")
+        mockMvc.perform(put("/api/users/me/change-password")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -261,7 +252,7 @@ class UserControllerIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void deleteUser_WithAdminRole_ShouldReturnNoContent() throws Exception {
         // When/Then
-        mockMvc.perform(delete("/api/admin/users/1")
+        mockMvc.perform(delete("/api/users/1")
                 .with(csrf()))
                 .andExpect(status().isNoContent());
     }
@@ -270,17 +261,14 @@ class UserControllerIntegrationTest {
     @WithMockUser(roles = "USER")
     void deleteUser_WithUserRole_ShouldReturnForbidden() throws Exception {
         // When/Then
-        mockMvc.perform(delete("/api/admin/users/1")
+        mockMvc.perform(delete("/api/users/1")
                 .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "john@example.com")
     void deleteMyAccount_ShouldReturnNoContent() throws Exception {
-        // Given
-        when(securityUtil.getCurrentUserId()).thenReturn(1L);
-
         // When/Then
         mockMvc.perform(delete("/api/users/me")
                 .with(csrf()))
