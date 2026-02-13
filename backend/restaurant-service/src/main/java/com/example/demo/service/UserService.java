@@ -161,6 +161,26 @@ public class UserService {
         log.info("User deleted successfully: {}", userId);
     }
 
+    @Transactional
+    public void deleteUserByEmail(String email) {
+        log.info("Deleting user by email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Cascade is configured in entity, so this should delete reviews and restaurants too
+        userRepository.delete(user);
+    }
+
+    @Transactional
+    public void deleteUserById(Long id) {
+        log.info("Deleting user by id: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        // Cascade is configured in entity, so this should delete reviews and restaurants too
+        userRepository.delete(user);
+    }
+
     private UserResponseDTO mapToResponse(User user) {
         return UserResponseDTO.builder()
                 .id(user.getId())
