@@ -40,8 +40,17 @@ public class RestaurantService {
             throw new UnauthorizedException("Only verified users and admins can create restaurants");
         }
 
-        Double latitude = 50.061698;
-        Double longitude = 19.937206;
+        Double latitude = null;
+        Double longitude = null;
+
+        try {
+            var coordinates = geocodingService.geocodeAddress(request.getAddress());
+            latitude = coordinates.getLatitude();
+            longitude = coordinates.getLongitude();
+        } catch (Exception e) {
+            log.warn("Geocoding failed for address '{}', coordinates will be null: {}",
+                    request.getAddress(), e.getMessage());
+        }
 
         Restaurant restaurant = Restaurant.builder()
                 .name(request.getName())
