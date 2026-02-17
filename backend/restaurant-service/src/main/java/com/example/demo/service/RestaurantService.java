@@ -51,6 +51,7 @@ public class RestaurantService {
                 .phone(request.getPhone())
                 .description(request.getDescription())
                 .openingHours(request.getOpeningHours())
+                .imageUrl(request.getImageUrl())
                 .owner(owner)
                 .status(RestaurantStatus.PENDING)
                 .isVerified(false)
@@ -194,7 +195,7 @@ public class RestaurantService {
         restaurant.setPhone(request.getPhone());
         restaurant.setOpeningHours(request.getOpeningHours());
         restaurant.setDescription(request.getDescription());
-
+        restaurant.setImageUrl(request.getImageUrl());
         restaurant.setCuisineType(request.getCuisineType());
         restaurant.setPriceRange(PriceRange.fromString(request.getPriceRange()));
 
@@ -246,6 +247,7 @@ public class RestaurantService {
                 .longitude(restaurant.getLongitude())
                 .phone(restaurant.getPhone())
                 .openingHours(restaurant.getOpeningHours())
+                .imageUrl(restaurant.getImageUrl())
                 .description(restaurant.getDescription())
                 .rating(restaurant.getRating())
                 .status(restaurant.getStatus())
