@@ -6,6 +6,7 @@ import com.example.demo.entity.Restaurant;
 import com.example.demo.entity.RestaurantStatus;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
+import com.example.demo.exception.GeocodingException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.repository.RestaurantRepository;
@@ -85,6 +86,8 @@ class RestaurantServiceTest {
     void createRestaurant_WithVerifiedUser_ShouldSucceed() {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(geocodingService.geocodeAddress(any()))
+                .thenReturn(new GeocodingService.GeocodingResult(51.5237, -0.1585, "221B Baker Street, London"));
         when(restaurantRepository.save(any(Restaurant.class))).thenReturn(testRestaurant);
 
         // When
@@ -96,6 +99,25 @@ class RestaurantServiceTest {
         assertThat(result.getStatus()).isEqualTo(RestaurantStatus.PENDING);
         assertThat(result.isVerified()).isFalse();
         verify(restaurantRepository).save(any(Restaurant.class));
+        verify(geocodingService).geocodeAddress(any()); // verify it was actually called
+    }
+
+    @Test
+    void createRestaurant_WhenGeocodingFails_ShouldStillSucceed() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(geocodingService.geocodeAddress(any()))
+                .thenThrow(new GeocodingException("Address not found"));
+        when(restaurantRepository.save(any(Restaurant.class))).thenReturn(testRestaurant);
+
+        // When
+        RestaurantResponseDTO result = restaurantService.createRestaurant(createRequest, 1L);
+
+        // Then
+        assertThat(result).isNotNull(); // still created
+        verify(restaurantRepository).save(argThat(r ->
+                r.getLatitude() == null && r.getLongitude() == null // coordinates are null
+        ));
     }
 
     @Test
@@ -184,7 +206,7 @@ class RestaurantServiceTest {
         // Then
         assertThat(result.getStatus()).isEqualTo(RestaurantStatus.APPROVED);
         verify(restaurantRepository).save(argThat(r ->
-            r.getStatus() == RestaurantStatus.APPROVED
+                r.getStatus() == RestaurantStatus.APPROVED
         ));
     }
 

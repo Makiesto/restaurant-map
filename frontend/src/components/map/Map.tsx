@@ -246,7 +246,9 @@ const Map: React.FC = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            {filteredRestaurants.map((restaurant) => (
+            {filteredRestaurants
+                .filter(restaurant => restaurant.latitude != null && restaurant.longitude != null)
+                .map((restaurant) => (
               <Marker
                 key={restaurant.id}
                 position={[restaurant.latitude, restaurant.longitude]}
