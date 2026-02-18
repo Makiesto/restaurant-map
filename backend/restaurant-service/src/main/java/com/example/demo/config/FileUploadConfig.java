@@ -27,9 +27,5 @@ public class FileUploadConfig implements WebMvcConfigurer {
                 .addResourceLocations(resourceLocation)
                 .setCachePeriod(3600); // Cache for 1 hour
 
-        // Allow CORS for uploaded images
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(resourceLocation)
-                .resourceChain(true);
     }
 }

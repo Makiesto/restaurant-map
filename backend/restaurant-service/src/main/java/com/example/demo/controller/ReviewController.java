@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -124,6 +125,7 @@ public class ReviewController {
      * ADMIN: Verify a review
      */
     @PutMapping("/admin/reviews/{reviewId}/verify")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ReviewResponseDTO> verifyReview(@PathVariable Long reviewId) {
         log.info("PUT /api/admin/reviews/{}/verify - verifying review", reviewId);
 

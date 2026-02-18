@@ -74,6 +74,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/dishes/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/allergens").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/restaurants/*/reviews").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").authenticated()
+
                         // All other endpoints require authentication
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/upload/**").authenticated()
