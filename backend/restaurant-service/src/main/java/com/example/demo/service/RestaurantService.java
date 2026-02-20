@@ -195,7 +195,10 @@ public class RestaurantService {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with ID: " + restaurantId));
 
-        if (!restaurant.getOwner().getId().equals(userId)) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!restaurant.getOwner().getId().equals(userId) && currentUser.getRole() != Role.ADMIN) {
             throw new UnauthorizedException("You can only update your own restaurants");
         }
 
@@ -232,8 +235,11 @@ public class RestaurantService {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with ID: " + restaurantId));
 
-        if (!restaurant.getOwner().getId().equals(userId)) {
-            throw new UnauthorizedException("You can only delete your own restaurants");
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!restaurant.getOwner().getId().equals(userId) && currentUser.getRole() != Role.ADMIN) {
+            throw new UnauthorizedException("You can only update your own restaurants");
         }
 
         restaurantRepository.deleteById(restaurantId);
