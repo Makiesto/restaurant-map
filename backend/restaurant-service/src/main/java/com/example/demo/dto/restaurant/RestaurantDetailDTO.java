@@ -19,5 +19,5 @@ public class RestaurantDetailDTO {
     private String phone;
     private String description;
     private LocalDateTime createdAt;
-    private List<DishSummaryDTO> dishe;
+    private List<DishSummaryDTO> dishes;
 }
