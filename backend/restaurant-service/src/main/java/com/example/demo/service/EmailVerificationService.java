@@ -86,8 +86,8 @@ public class EmailVerificationService {
 
         // Check if a recent token was sent (rate limiting)
         if (user.getEmailVerificationTokenExpiry() != null &&
-            user.getEmailVerificationTokenExpiry().minusHours(23).isAfter(LocalDateTime.now())) {
-            throw new ValidationException("Verification email was recently sent. Please check your inbox or wait a few minutes.");
+                user.getEmailVerificationTokenExpiry().isAfter(LocalDateTime.now().plusHours(23))) {
+            throw new ValidationException("Verification email was recently sent. Please check your inbox or wait before retrying.");
         }
 
         // Send new verification email

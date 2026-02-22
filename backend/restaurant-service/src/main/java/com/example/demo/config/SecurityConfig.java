@@ -68,12 +68,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/dishes/*").hasAnyRole("VERIFIED_USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/dishes/*").hasAnyRole("VERIFIED_USER", "ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/api/restaurants").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*/menu").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/dishes/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/allergens").permitAll()
-
                         .requestMatchers(HttpMethod.POST, "/api/restaurants/*/reviews").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/reviews/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").authenticated()

@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.security.SecurityUtil;
 import com.example.demo.service.FileStorageService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,10 +23,12 @@ public class FileUploadController {
 
     private final FileStorageService fileStorageService;
 
+    private final SecurityUtil securityUtil;
+
     /**
      * Upload an image file
      *
-     * @param file The image file to upload
+     * @param file   The image file to upload
      * @param folder Optional folder for organization (e.g., "restaurants", "dishes")
      * @return Response containing the file URL and metadata
      */
@@ -41,17 +44,17 @@ public class FileUploadController {
             // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("File is empty"));
+                        .body(new ErrorResponse("File is empty"));
             }
 
             if (!fileStorageService.isValidImageType(file.getContentType())) {
                 return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Invalid file type. Only images (JPEG, PNG, GIF, WebP) are allowed."));
+                        .body(new ErrorResponse("Invalid file type. Only images (JPEG, PNG, GIF, WebP) are allowed."));
             }
 
             if (!fileStorageService.isValidFileSize(file.getSize())) {
                 return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("File size exceeds maximum allowed size (10MB)"));
+                        .body(new ErrorResponse("File size exceeds maximum allowed size (10MB)"));
             }
 
             // Store file
@@ -59,11 +62,11 @@ public class FileUploadController {
 
             // Build response
             FileUploadResponse response = FileUploadResponse.builder()
-                .url(fileUrl)
-                .fileName(file.getOriginalFilename())
-                .fileSize(file.getSize())
-                .contentType(file.getContentType())
-                .build();
+                    .url(fileUrl)
+                    .fileName(file.getOriginalFilename())
+                    .fileSize(file.getSize())
+                    .contentType(file.getContentType())
+                    .build();
 
             log.info("File uploaded successfully: {}", fileUrl);
             return ResponseEntity.ok(response);
@@ -71,7 +74,7 @@ public class FileUploadController {
         } catch (IOException e) {
             log.error("Error uploading file: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to upload file: " + e.getMessage()));
+                    .body(new ErrorResponse("Failed to upload file: " + e.getMessage()));
         }
     }
 
@@ -85,15 +88,28 @@ public class FileUploadController {
     public ResponseEntity<?> deleteImage(@RequestParam("url") String url) {
         log.info("Delete request received for URL: {}", url);
 
+        // Only allow deletion of files uploaded by the system (basic sanity check)
+        // For full ownership: look up which Restaurant/Dish references this URL and verify ownership
+        if (url == null || url.isBlank()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("URL is required"));
+        }
+
         try {
+            // Verify the requester owns a resource that references this URL
+            // (wire in RestaurantRepository/DishRepository and check)
+            // Minimal safe guard: ensure it's a known host
+            if (!url.startsWith("http://localhost:8080/uploads/") && !url.contains("res.cloudinary.com")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Cannot delete external URLs"));
+            }
+
             fileStorageService.deleteFile(url);
-            log.info("File deleted successfully: {}", url);
             return ResponseEntity.noContent().build();
 
         } catch (IOException e) {
             log.error("Error deleting file: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to delete file: " + e.getMessage()));
+                    .body(new ErrorResponse("Failed to delete file: " + e.getMessage()));
         }
     }
 
