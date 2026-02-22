@@ -183,7 +183,7 @@ class AdminControllerIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void verifyRestaurant_WithNotes_ShouldReturnVerifiedRestaurant() throws Exception {
         // Given
-        restaurantDTO.setVerified(true);
+        restaurantDTO.setIsVerified(true);
         restaurantDTO.setVerifiedAt(LocalDateTime.now());
 
         VerifyRestaurantRequestDTO request = new VerifyRestaurantRequestDTO();
@@ -205,7 +205,7 @@ class AdminControllerIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void verifyRestaurant_WithoutNotes_ShouldSucceed() throws Exception {
         // Given
-        restaurantDTO.setVerified(true);
+        restaurantDTO.setIsVerified(true);
         when(restaurantService.verifyRestaurant(eq(1L), any())).thenReturn(restaurantDTO);
 
         // When/Then
@@ -219,7 +219,7 @@ class AdminControllerIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void unverifyRestaurant_ShouldReturnUnverifiedRestaurant() throws Exception {
         // Given
-        restaurantDTO.setVerified(false);
+        restaurantDTO.setIsVerified(true);
         restaurantDTO.setVerifiedAt(null);
         when(restaurantService.unverifyRestaurant(1L)).thenReturn(restaurantDTO);
 

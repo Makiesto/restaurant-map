@@ -97,7 +97,7 @@ class RestaurantServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Test Restaurant");
         assertThat(result.getStatus()).isEqualTo(RestaurantStatus.PENDING);
-        assertThat(result.isVerified()).isFalse();
+        assertThat(result.getIsVerified()).isFalse();
         verify(restaurantRepository).save(any(Restaurant.class));
         verify(geocodingService).geocodeAddress(any()); // verify it was actually called
     }

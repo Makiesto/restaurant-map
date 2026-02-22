@@ -426,7 +426,7 @@ class UserServiceTest {
         when(userRepository.existsById(999L)).thenReturn(false);
 
         // When/Then
-        assertThatThrownBy(() -> userService.deleteUser(999L))
+        assertThatThrownBy(() -> userService.deleteUserById(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("User not found with ID: 999");
 
