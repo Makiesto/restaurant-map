@@ -8,6 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class SecurityUtil {
@@ -33,7 +35,19 @@ public class SecurityUtil {
     /**
      * Get current user ID
      */
+    @SuppressWarnings("unchecked")
     public Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ResourceNotFoundException("No authenticated user found");
+        }
+
+        Object details = authentication.getDetails();
+        if (details instanceof Map<?, ?> map && map.containsKey("userId")) {
+            return (Long) map.get("userId");
+        }
+
         return getCurrentUser().getId();
     }
 

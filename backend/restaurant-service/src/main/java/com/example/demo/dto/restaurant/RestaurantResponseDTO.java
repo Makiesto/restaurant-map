@@ -25,7 +25,7 @@ public class RestaurantResponseDTO {
     private String description;
     private String imageUrl;
     private Double rating;
-    private boolean isVerified;
+    private Boolean isVerified;
     private LocalDateTime verifiedAt;
     private RestaurantStatus status;
     private String cuisineType;

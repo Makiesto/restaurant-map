@@ -16,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Slf4j
@@ -25,7 +26,7 @@ public class GeocodingService {
     private static final long MIN_REQUEST_INTERVAL_MS = 1000;
 
     private final RestTemplate restTemplate;
-    private long lastRequestTime = 0;
+    private final AtomicLong lastRequestTime = new AtomicLong(0);
 
     public GeocodingService() {
         this.restTemplate = new RestTemplate();
@@ -90,22 +91,18 @@ public class GeocodingService {
     /**
      * Enforces rate limiting - waits 1 second between requests
      */
-    private void enforceRateLimit() {
+    private synchronized void enforceRateLimit() {
         long now = System.currentTimeMillis();
-        long timeSinceLastRequest = now - lastRequestTime;
-
+        long timeSinceLastRequest = now - lastRequestTime.get();
         if (timeSinceLastRequest < MIN_REQUEST_INTERVAL_MS) {
             long sleepTime = MIN_REQUEST_INTERVAL_MS - timeSinceLastRequest;
-            log.debug("Rate limiting: waiting {} ms", sleepTime);
             try {
                 Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("Rate limiting interrupted", e);
             }
         }
-
-        lastRequestTime = System.currentTimeMillis();
+        lastRequestTime.set(System.currentTimeMillis());
     }
 
     public double calculateDistance(Coordinates from, Coordinates to) {

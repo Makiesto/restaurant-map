@@ -152,16 +152,6 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long userId) {
-        log.info("Deleting user with ID: {}", userId);
-        if (!userRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found with ID: " + userId);
-        }
-        userRepository.deleteById(userId);
-        log.info("User deleted successfully: {}", userId);
-    }
-
-    @Transactional
     public void deleteUserByEmail(String email) {
         log.info("Deleting user by email: {}", email);
         User user = userRepository.findByEmail(email)

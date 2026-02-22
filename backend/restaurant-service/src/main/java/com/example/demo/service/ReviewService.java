@@ -7,6 +7,7 @@ import com.example.demo.entity.Restaurant;
 import com.example.demo.entity.Review;
 import com.example.demo.entity.User;
 import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.exception.ValidationException;
 import com.example.demo.repository.RestaurantRepository;
 import com.example.demo.repository.ReviewRepository;
@@ -70,8 +71,8 @@ public class ReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
 
         // Check if user is the owner of the review
-        if (!review.getUser().getId().equals(userId)) {
-            throw new ValidationException("You can only update your own reviews");
+        if(!review.getUser().getId().equals(userId)) {
+            throw new UnauthorizedException("You can only update your own reviews");
         }
 
         review.setRating(request.getRating());
@@ -95,7 +96,7 @@ public class ReviewService {
 
         // Check if user is the owner of the review
         if (!review.getUser().getId().equals(userId)) {
-            throw new ValidationException("You can only delete your own reviews");
+            throw new UnauthorizedException("You can only delete your own reviews");
         }
 
         Long restaurantId = review.getRestaurant().getId();
