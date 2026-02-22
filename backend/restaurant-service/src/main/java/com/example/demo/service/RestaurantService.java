@@ -237,7 +237,7 @@ public class RestaurantService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!restaurant.getOwner().getId().equals(userId) && currentUser.getRole() != Role.ADMIN) {
-            throw new UnauthorizedException("You can only update your own restaurants");
+            throw new UnauthorizedException("You can only delete your own restaurants");
         }
 
         restaurantRepository.deleteById(restaurantId);

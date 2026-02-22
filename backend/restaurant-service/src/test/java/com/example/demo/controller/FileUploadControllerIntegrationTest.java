@@ -321,7 +321,7 @@ class FileUploadControllerIntegrationTest {
         mockMvc.perform(delete("/api/upload/image")
                 .param("url", invalidUrl)
                 .with(csrf()))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -357,7 +357,7 @@ class FileUploadControllerIntegrationTest {
         mockMvc.perform(delete("/api/upload/image")
                 .param("url", "")
                 .with(csrf()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isBadRequest());
     }
 
     @Test

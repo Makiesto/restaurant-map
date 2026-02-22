@@ -8,6 +8,7 @@ import com.example.demo.entity.Review;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.exception.ValidationException;
 import com.example.demo.repository.RestaurantRepository;
 import com.example.demo.repository.ReviewRepository;
@@ -51,18 +52,16 @@ class ReviewServiceTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.builder()
-                .id(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@example.com")
-                .role(Role.USER)
+        User restaurantOwner = User.builder()
+                .id(99L)
+                .email("owner@example.com")
                 .build();
 
         testRestaurant = Restaurant.builder()
                 .id(1L)
                 .name("Test Restaurant")
                 .rating(4.5)
+                .owner(restaurantOwner)
                 .build();
 
         testReview = Review.builder()
@@ -107,7 +106,7 @@ class ReviewServiceTest {
 
         verify(reviewRepository).save(any(Review.class));
         verify(restaurantRepository).save(argThat(restaurant ->
-            restaurant.getRating().equals(4.8)
+                restaurant.getRating().equals(4.8)
         ));
     }
 
@@ -174,7 +173,7 @@ class ReviewServiceTest {
 
         verify(reviewRepository).save(argThat(review ->
                 review.getRating().equals(4) &&
-                review.getComment().equals("Updated: Good food")
+                        review.getComment().equals("Updated: Good food")
         ));
     }
 
@@ -185,7 +184,7 @@ class ReviewServiceTest {
 
         // When/Then
         assertThatThrownBy(() -> reviewService.updateReview(1L, createRequest, 999L))
-                .isInstanceOf(ValidationException.class)
+                .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("You can only update your own reviews");
 
         verify(reviewRepository, never()).save(any());
@@ -204,7 +203,7 @@ class ReviewServiceTest {
         // Then
         verify(reviewRepository).delete(testReview);
         verify(restaurantRepository).save(argThat(restaurant ->
-            restaurant.getRating().equals(4.0)
+                restaurant.getRating().equals(4.0)
         ));
     }
 
@@ -215,7 +214,7 @@ class ReviewServiceTest {
 
         // When/Then
         assertThatThrownBy(() -> reviewService.deleteReview(1L, 999L))
-                .isInstanceOf(ValidationException.class)
+                .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("You can only delete your own reviews");
 
         verify(reviewRepository, never()).delete(any());
@@ -280,7 +279,7 @@ class ReviewServiceTest {
 
         // Then
         assertThat(stats.getTotalReviews()).isEqualTo(7);
-        assertThat(stats.getAverageRating()).isEqualTo((5+5+4+4+3+2+1)/7.0);
+        assertThat(stats.getAverageRating()).isEqualTo((5 + 5 + 4 + 4 + 3 + 2 + 1) / 7.0);
         assertThat(stats.getFiveStars()).isEqualTo(2);
         assertThat(stats.getFourStars()).isEqualTo(2);
         assertThat(stats.getThreeStars()).isEqualTo(1);
@@ -344,7 +343,7 @@ class ReviewServiceTest {
         assertThat(result.getIsVerified()).isTrue();
 
         verify(reviewRepository).save(argThat(review ->
-            review.getIsVerified().equals(true)
+                review.getIsVerified().equals(true)
         ));
     }
 

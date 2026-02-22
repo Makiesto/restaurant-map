@@ -8,6 +8,7 @@ import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.repository.ComponentRepository;
 import com.example.demo.repository.DishRepository;
 import com.example.demo.repository.RestaurantRepository;
+import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,9 @@ class DishServiceTest {
 
     @Mock
     private ComponentRepository componentRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private DishService dishService;
@@ -230,6 +234,7 @@ class DishServiceTest {
         when(dishRepository.findById(1L)).thenReturn(Optional.of(testDish));
         when(componentRepository.findById(1L)).thenReturn(Optional.of(testComponent));
         when(dishRepository.save(any(Dish.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
         DishCreateRequestDTO updateRequest = new DishCreateRequestDTO();
         updateRequest.setName("Updated Chicken");
@@ -253,7 +258,7 @@ class DishServiceTest {
 
         verify(dishRepository).save(argThat(dish ->
                 dish.getName().equals("Updated Chicken") &&
-                dish.getPrice().equals(29.99)
+                        dish.getPrice().equals(29.99)
         ));
     }
 
@@ -261,6 +266,9 @@ class DishServiceTest {
     void updateDish_ByNonOwner_ShouldThrowException() {
         // Given
         when(dishRepository.findById(1L)).thenReturn(Optional.of(testDish));
+
+        User nonOwner = User.builder().id(999L).role(Role.USER).build();
+        when(userRepository.findById(999L)).thenReturn(Optional.of(nonOwner));
 
         // When/Then
         assertThatThrownBy(() -> dishService.updateDish(1L, createRequest, 999L))
@@ -274,6 +282,7 @@ class DishServiceTest {
     void deleteDish_ByOwner_ShouldSucceed() {
         // Given
         when(dishRepository.findById(1L)).thenReturn(Optional.of(testDish));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
         // When
         dishService.deleteDish(1L, 1L);
@@ -286,6 +295,9 @@ class DishServiceTest {
     void deleteDish_ByNonOwner_ShouldThrowException() {
         // Given
         when(dishRepository.findById(1L)).thenReturn(Optional.of(testDish));
+
+        User nonOwner = User.builder().id(999L).role(Role.USER).build();
+        when(userRepository.findById(999L)).thenReturn(Optional.of(nonOwner));
 
         // When/Then
         assertThatThrownBy(() -> dishService.deleteDish(1L, 999L))

@@ -228,6 +228,7 @@ class RestaurantServiceTest {
         // Given
         when(restaurantRepository.findById(1L)).thenReturn(Optional.of(testRestaurant));
         when(restaurantRepository.save(any(Restaurant.class))).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         RestaurantCreateRequestDTO updateRequest = new RestaurantCreateRequestDTO();
         updateRequest.setName("Updated Restaurant");
@@ -246,6 +247,9 @@ class RestaurantServiceTest {
         // Given
         when(restaurantRepository.findById(1L)).thenReturn(Optional.of(testRestaurant));
 
+        User nonOwner = User.builder().id(999L).role(Role.USER).build();
+        when(userRepository.findById(999L)).thenReturn(Optional.of(nonOwner));
+
         // When/Then
         assertThatThrownBy(() -> restaurantService.updateRestaurant(1L, createRequest, 999L))
                 .isInstanceOf(UnauthorizedException.class)
@@ -256,6 +260,7 @@ class RestaurantServiceTest {
     void deleteRestaurant_ByOwner_ShouldSucceed() {
         // Given
         when(restaurantRepository.findById(1L)).thenReturn(Optional.of(testRestaurant));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         // When
         restaurantService.deleteRestaurant(1L, 1L);
@@ -268,6 +273,9 @@ class RestaurantServiceTest {
     void deleteRestaurant_ByNonOwner_ShouldThrowException() {
         // Given
         when(restaurantRepository.findById(1L)).thenReturn(Optional.of(testRestaurant));
+
+        User nonOwner = User.builder().id(999L).role(Role.USER).build();
+        when(userRepository.findById(999L)).thenReturn(Optional.of(nonOwner));
 
         // When/Then
         assertThatThrownBy(() -> restaurantService.deleteRestaurant(1L, 999L))

@@ -146,7 +146,7 @@ class AdminControllerIntegrationTest {
         // When/Then
         mockMvc.perform(get("/api/admin/restaurants/unverified"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].verified").value(false));
+                .andExpect(jsonPath("$[0].isVerified").value(false));
     }
 
     @Test
@@ -198,7 +198,7 @@ class AdminControllerIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.verified").value(true));
+                .andExpect(jsonPath("$.isVerified").value(true));
     }
 
     @Test
@@ -212,14 +212,14 @@ class AdminControllerIntegrationTest {
         mockMvc.perform(put("/api/admin/restaurants/1/verify")
                 .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.verified").value(true));
+                .andExpect(jsonPath("$.isVerified").value(true));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void unverifyRestaurant_ShouldReturnUnverifiedRestaurant() throws Exception {
         // Given
-        restaurantDTO.setIsVerified(true);
+        restaurantDTO.setIsVerified(false);
         restaurantDTO.setVerifiedAt(null);
         when(restaurantService.unverifyRestaurant(1L)).thenReturn(restaurantDTO);
 
@@ -228,7 +228,7 @@ class AdminControllerIntegrationTest {
                 .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.verified").value(false));
+                .andExpect(jsonPath("$.isVerified").value(false));
     }
 
     @Test

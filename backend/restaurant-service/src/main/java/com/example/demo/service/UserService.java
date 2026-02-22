@@ -165,7 +165,7 @@ public class UserService {
     public void deleteUserById(Long id) {
         log.info("Deleting user by id: {}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
 
         // Cascade is configured in entity, so this should delete reviews and restaurants too
         userRepository.delete(user);

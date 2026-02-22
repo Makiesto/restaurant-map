@@ -422,8 +422,6 @@ class UserServiceTest {
 
     @Test
     void deleteUser_WithNonExistentUser_ShouldThrowException() {
-        // Given
-        when(userRepository.existsById(999L)).thenReturn(false);
 
         // When/Then
         assertThatThrownBy(() -> userService.deleteUserById(999L))
