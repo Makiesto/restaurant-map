@@ -8,6 +8,7 @@ import com.example.demo.exception.UnauthorizedException;
 import com.example.demo.repository.ComponentRepository;
 import com.example.demo.repository.DishRepository;
 import com.example.demo.repository.RestaurantRepository;
+import com.example.demo.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class DishService {
     private final DishRepository dishRepository;
     private final RestaurantRepository restaurantRepository;
     private final ComponentRepository componentRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public DishResponseDTO createDish(DishCreateRequestDTO request, Long restaurantId, Long userId) {
@@ -99,7 +101,10 @@ public class DishService {
                 .orElseThrow(() -> new ResourceNotFoundException("Dish not found with ID: " + id));
 
         // Check if user is the restaurant owner
-        if (!dish.getRestaurant().getOwner().getId().equals(userId)) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!dish.getRestaurant().getOwner().getId().equals(userId)
+                && currentUser.getRole() != Role.ADMIN) {
             throw new UnauthorizedException("You can only update dishes from your own restaurants");
         }
 
@@ -147,7 +152,10 @@ public class DishService {
                 .orElseThrow(() -> new ResourceNotFoundException("Dish not found with ID: " + dishId));
 
         // Check if user is the restaurant owner
-        if (!dish.getRestaurant().getOwner().getId().equals(userId)) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!dish.getRestaurant().getOwner().getId().equals(userId) && currentUser.getRole() != Role.ADMIN) {
             throw new UnauthorizedException("You can only delete dishes from your own restaurants");
         }
 

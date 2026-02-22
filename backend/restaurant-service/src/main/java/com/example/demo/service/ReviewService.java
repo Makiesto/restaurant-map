@@ -41,6 +41,10 @@ public class ReviewService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
+        if (restaurant.getOwner().getId().equals(userId)) {
+            throw new ValidationException("You cannot review your own restaurant");
+        }
+
         // Check if user already reviewed this restaurant
         if (reviewRepository.existsByRestaurantIdAndUserId(restaurantId, userId)) {
             throw new ValidationException("You have already reviewed this restaurant. Please update your existing review.");
@@ -71,7 +75,7 @@ public class ReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
 
         // Check if user is the owner of the review
-        if(!review.getUser().getId().equals(userId)) {
+        if (!review.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("You can only update your own reviews");
         }
 

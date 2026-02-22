@@ -41,6 +41,7 @@ public class User {
     private Role role;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean emailVerified = false;
 
     private String emailVerificationToken;

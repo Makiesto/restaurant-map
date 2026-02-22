@@ -59,6 +59,7 @@ public class Restaurant {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private RestaurantStatus status = RestaurantStatus.PENDING;
 
     @Column(name = "is_verified", nullable = false)
@@ -88,9 +89,11 @@ public class Restaurant {
             joinColumns = @JoinColumn(name = "restaurant_id")
     )
     @Column(name = "dietary_option")
+    @Builder.Default
     private Set<String> dietaryOptions = new HashSet<>();
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Dish> dishes = new ArrayList<>();
 
     @PrePersist

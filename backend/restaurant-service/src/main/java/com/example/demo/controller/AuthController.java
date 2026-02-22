@@ -48,7 +48,7 @@ public class AuthController {
      * PUBLIC: Login and get JWT token
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO request) {
         log.info("POST /api/auth/login - login attempt for: {}", request.getEmail());
 
         try {
@@ -86,8 +86,13 @@ public class AuthController {
             return ResponseEntity.ok(response);
 
         } catch (AuthenticationException e) {
+            log.error("Login failed for user: {}", request.getEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body((AuthResponseDTO) Map.of("error", "Unauthorized", "message", "Invalid email or password"));
+                    .body(Map.of(
+                            "status", 401,
+                            "error", "Unauthorized",
+                            "message", "Invalid email or password"
+                    ));
         }
     }
 }

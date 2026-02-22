@@ -52,6 +52,7 @@ public class Dish {
     private Double baseKcal;
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<DishComponent> dishComponents = new ArrayList<>();
 
 }
