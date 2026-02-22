@@ -19,18 +19,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
 public class AuthController {
-    
+
     private final UserService userService;
     private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    
+
     /**
      * PUBLIC: Register new user
      */
@@ -41,14 +43,14 @@ public class AuthController {
         UserResponseDTO user = userService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
-    
+
     /**
      * PUBLIC: Login and get JWT token
      */
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         log.info("POST /api/auth/login - login attempt for: {}", request.getEmail());
-        
+
         try {
             // Authenticate user
             Authentication authentication = authenticationManager.authenticate(
@@ -57,18 +59,18 @@ public class AuthController {
                             request.getPassword()
                     )
             );
-            
+
             // Get user details
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            
+
             // Generate JWT token
             String token = jwtUtil.generateToken(
                     user.getEmail(),
                     user.getId(),
                     user.getRole().name()
             );
-            
+
             // Build response
             AuthResponseDTO response = AuthResponseDTO.builder()
                     .token(token)
@@ -79,13 +81,13 @@ public class AuthController {
                     .lastName(user.getLastName())
                     .role(user.getRole())
                     .build();
-            
+
             log.info("User logged in successfully: {}", request.getEmail());
             return ResponseEntity.ok(response);
-            
+
         } catch (AuthenticationException e) {
-            log.error("Login failed for user: {}", request.getEmail());
-            throw new RuntimeException("Invalid email or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body((AuthResponseDTO) Map.of("error", "Unauthorized", "message", "Invalid email or password"));
         }
     }
 }

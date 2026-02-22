@@ -37,30 +37,32 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // Public
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // User "me" endpoints - must come BEFORE numeric ID patterns to take precedence
-                        .requestMatchers("/api/restaurants/my").authenticated()
-                        .requestMatchers("/api/users/me/**").authenticated()
-                        .requestMatchers("/api/users/me").authenticated()
-
+                        // Public GET endpoints
                         .requestMatchers(HttpMethod.GET, "/api/restaurants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/*/menu").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*/reviews").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*/reviews/stats").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/dishes/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/allergens").permitAll()  // Public allergens list
+                        .requestMatchers(HttpMethod.GET, "/api/allergens").permitAll()
 
-                        // Admin endpoints
+                        // Authenticated "me" endpoints — before wildcard numeric ID rules
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*/reviews/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/my").authenticated()
+                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers("/api/users/me/**").authenticated()
+
+                        // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // IMPORTANT: Admin-only user management endpoints (numeric IDs)
-                        // Must use RegexRequestMatcher for numeric-only matching
                         .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "DELETE")).hasRole("ADMIN")
                         .requestMatchers(new RegexRequestMatcher("/api/users/\\d+", "GET")).hasRole("ADMIN")
 
-                        // Verified user endpoints (admins can also do these)
+                        // Verified users + admins
                         .requestMatchers(HttpMethod.POST, "/api/restaurants").hasAnyRole("VERIFIED_USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/restaurants/*").hasAnyRole("VERIFIED_USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/restaurants/*").hasAnyRole("VERIFIED_USER", "ADMIN")
@@ -68,13 +70,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/dishes/*").hasAnyRole("VERIFIED_USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/dishes/*").hasAnyRole("VERIFIED_USER", "ADMIN")
 
+                        // Authenticated
                         .requestMatchers(HttpMethod.POST, "/api/restaurants/*/reviews").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/reviews/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").authenticated()
-
-                        // All other endpoints require authentication
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/upload/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->

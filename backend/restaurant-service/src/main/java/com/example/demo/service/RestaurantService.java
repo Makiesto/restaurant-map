@@ -68,9 +68,7 @@ public class RestaurantService {
                 .updatedAt(LocalDateTime.now())
                 .cuisineType(request.getCuisineType())
                 .dietaryOptions(request.getDietaryOptions())
-                .priceRange(request.getPriceRange() != null && !request.getPriceRange().trim().isEmpty()
-                        ? PriceRange.valueOf(request.getPriceRange().toUpperCase())
-                        : null)
+                .priceRange(PriceRange.fromString(request.getPriceRange()))
                 .build();
 
         Restaurant savedRestaurant = restaurantRepository.save(restaurant);
