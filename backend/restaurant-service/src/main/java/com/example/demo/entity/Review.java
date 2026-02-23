@@ -41,7 +41,6 @@ public class Review {
     private LocalDateTime updatedAt;
 
     @Column(name = "is_verified")
-    @Builder.Default
     private Boolean isVerified = false;
 
     @PrePersist

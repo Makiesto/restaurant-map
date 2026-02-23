@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/webjars/**").permitAll()
 
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
 
                         // Public GET endpoints
                         .requestMatchers(HttpMethod.GET, "/api/restaurants").permitAll()
@@ -83,6 +84,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").authenticated()
                         .requestMatchers("/api/upload/**").authenticated()
 
+                        // Protected endpoints - /api/restaurants/my must come before generic patterns
+                        .requestMatchers("/api/restaurants/my").authenticated()
+                        .requestMatchers("/api/restaurants/my/**").authenticated()
+
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->

@@ -75,7 +75,7 @@ public class ReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
 
         // Check if user is the owner of the review
-        if (!review.getUser().getId().equals(userId)) {
+        if (review.getUser() == null || !review.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("You can only update your own reviews");
         }
 
@@ -99,7 +99,7 @@ public class ReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
 
         // Check if user is the owner of the review
-        if (!review.getUser().getId().equals(userId)) {
+        if (review.getUser() == null || !review.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("You can only delete your own reviews");
         }
 

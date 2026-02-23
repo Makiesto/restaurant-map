@@ -41,7 +41,6 @@ public class User {
     private Role role;
 
     @Column(nullable = false)
-    @Builder.Default
     private Boolean emailVerified = false;
 
     private String emailVerificationToken;
@@ -57,11 +56,9 @@ public class User {
     private LocalDateTime verifiedAt;
 
     @Column(name = "is_active", nullable = false)
-    @Builder.Default
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<Restaurant> restaurants = new ArrayList<>();
 
     @ManyToMany
@@ -70,11 +67,9 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "allergen_id")
     )
-    @Builder.Default
     private Set<Allergen> allergens = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private Set<Review> reviews = new HashSet<>();
 
     @PrePersist

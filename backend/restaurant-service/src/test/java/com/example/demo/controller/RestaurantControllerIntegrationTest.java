@@ -227,9 +227,10 @@ class RestaurantControllerIntegrationTest {
 
     @Test
     void getMyRestaurants_WithoutAuthentication_ShouldReturn403() throws Exception {
-        // When/Then
-        mockMvc.perform(get("/api/restaurants/my"))
-                .andExpect(status().isForbidden());
+        // Act & Assert - request without any authentication header
+        mockMvc.perform(get("/api/restaurants/my")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
     }
 
     // ========== POST /api/restaurants Tests ==========

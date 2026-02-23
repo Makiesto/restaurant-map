@@ -27,7 +27,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,6 +54,8 @@ class ReviewServiceTest {
         User restaurantOwner = User.builder()
                 .id(99L)
                 .email("owner@example.com")
+                .firstName("Owner")
+                .lastName("Person")
                 .build();
 
         testRestaurant = Restaurant.builder()
@@ -74,6 +75,18 @@ class ReviewServiceTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+
+        testUser = User.builder()
+                .id(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@example.com")
+                .role(Role.USER)
+                .build();
+        testUser.setId(1L);
+
+        testReview.setUser(testUser);
+        testReview.setId(1L);
 
         createRequest = new ReviewCreateRequestDTO();
         createRequest.setRating(5);
