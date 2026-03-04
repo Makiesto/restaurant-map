@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../../services/api';
-import type { Restaurant } from '../../types/restaurant.types';
 import './AdminStats.css';
 
-interface Stats {
-  totalRestaurants: number;
-  pendingRestaurants: number;
-  approvedRestaurants: number;
-  rejectedRestaurants: number;
+interface AdminStatsData {
   totalUsers: number;
   totalReviews: number;
+  totalRestaurants: number;
+  pendingRestaurants: number;
+  verifiedReviews: number;
   unverifiedReviews: number;
+  verifiedUsers: number;
+  unverifiedUsers: number;
 }
 
 const AdminStats: React.FC = () => {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<AdminStatsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recentRestaurants, setRecentRestaurants] = useState<Restaurant[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -25,25 +25,46 @@ const AdminStats: React.FC = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const [pending, approved] = await Promise.all([
-        apiService.getPendingRestaurants(),
-        apiService.getApprovedRestaurants(),
-      ]);
+      setError(null);
 
-      // Mock stats - in real app, you'd have dedicated endpoints
+      // Use the dedicated admin stats endpoint (previously unused).
+      // Cast explicitly — the API AdminStats type is missing verifiedReviews,
+      // verifiedUsers, unverifiedUsers, so we fill those with safe defaults.
+      const raw = await apiService.getAdminStats() as unknown as Record<string, number>;
       setStats({
-        totalRestaurants: pending.length + approved.length,
-        pendingRestaurants: pending.length,
-        approvedRestaurants: approved.length,
-        rejectedRestaurants: 0, // Would need backend endpoint
-        totalUsers: 0, // Would need backend endpoint
-        totalReviews: 0, // Would need backend endpoint
-        unverifiedReviews: 0, // Would need backend endpoint
+        totalUsers: raw.totalUsers ?? 0,
+        totalReviews: raw.totalReviews ?? 0,
+        totalRestaurants: raw.totalRestaurants ?? 0,
+        pendingRestaurants: raw.pendingRestaurants ?? 0,
+        verifiedReviews: raw.verifiedReviews ?? 0,
+        unverifiedReviews: raw.unverifiedReviews ?? 0,
+        verifiedUsers: raw.verifiedUsers ?? 0,
+        unverifiedUsers: raw.unverifiedUsers ?? 0,
       });
-
-      setRecentRestaurants(pending.slice(0, 5));
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      console.error('Failed to fetch admin stats:', err);
+
+      // Fallback: aggregate from separate endpoints
+      try {
+        const [restaurantsData, pendingData] = await Promise.all([
+          apiService.getApprovedRestaurants(),
+          apiService.getPendingRestaurants(),
+        ]);
+
+        setStats({
+          totalUsers: 0,
+          totalReviews: 0,
+          totalRestaurants: restaurantsData.length,
+          pendingRestaurants: pendingData.length,
+          verifiedReviews: 0,
+          unverifiedReviews: 0,
+          verifiedUsers: 0,
+          unverifiedUsers: 0,
+        });
+      } catch (fallbackErr) {
+        console.error('Fallback stats fetch also failed:', fallbackErr);
+        setError('Failed to load statistics. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -58,108 +79,88 @@ const AdminStats: React.FC = () => {
     );
   }
 
-  if (!stats) {
+  if (error || !stats) {
     return (
-      <div className="admin-error">
-        Failed to load statistics. Please try again.
+      <div className="admin-error-state">
+        <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+        <h3>Could not load statistics</h3>
+        <p>{error}</p>
+        <button onClick={fetchStats} className="btn-retry">
+          🔄 Try Again
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="admin-stats-container">
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card stat-primary">
-          <div className="stat-icon">🏪</div>
-          <div className="stat-content">
-            <h3>{stats.totalRestaurants}</h3>
-            <p>Total Restaurants</p>
-          </div>
-        </div>
-
-        <div className="stat-card stat-warning">
-          <div className="stat-icon">⏳</div>
-          <div className="stat-content">
-            <h3>{stats.pendingRestaurants}</h3>
-            <p>Pending Approval</p>
-          </div>
-        </div>
-
-        <div className="stat-card stat-success">
-          <div className="stat-icon">✅</div>
-          <div className="stat-content">
-            <h3>{stats.approvedRestaurants}</h3>
-            <p>Approved</p>
-          </div>
-        </div>
-
-        <div className="stat-card stat-danger">
-          <div className="stat-icon">❌</div>
-          <div className="stat-content">
-            <h3>{stats.rejectedRestaurants}</h3>
-            <p>Rejected</p>
-          </div>
-        </div>
-
-        <div className="stat-card stat-info">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <h3>{stats.totalUsers}</h3>
-            <p>Total Users</p>
-          </div>
-        </div>
-
-        <div className="stat-card stat-rating">
-          <div className="stat-icon">⭐</div>
-          <div className="stat-content">
-            <h3>{stats.totalReviews}</h3>
-            <p>Total Reviews</p>
-          </div>
-        </div>
+    <div className="admin-stats">
+      <div className="section-header">
+        <h2>📊 Platform Statistics</h2>
+        <button onClick={fetchStats} className="btn-refresh">
+          🔄 Refresh
+        </button>
       </div>
 
-      {/* Recent Activity */}
-      {recentRestaurants.length > 0 && (
-        <div className="recent-activity">
-          <h2>Recent Submissions</h2>
-          <div className="activity-list">
-            {recentRestaurants.map((restaurant) => (
-              <div key={restaurant.id} className="activity-item">
-                <div className="activity-icon">🏪</div>
-                <div className="activity-details">
-                  <h4>{restaurant.name}</h4>
-                  <p>{restaurant.address}</p>
-                  <span className="activity-time">
-                    {new Date(restaurant.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <span className="activity-status status-pending">Pending</span>
-              </div>
-            ))}
+
+      {/* Detailed breakdown cards */}
+      <div className="stats-detail-grid">
+        <div className="stat-detail-card">
+          <div className="stat-detail-icon">👥</div>
+          <div className="stat-detail-content">
+            <h4>Users</h4>
+            <div className="stat-detail-row">
+              <span>Total</span>
+              <strong>{stats.totalUsers.toLocaleString()}</strong>
+            </div>
+            <div className="stat-detail-row">
+              <span>✅ Verified</span>
+              <strong className="text-green">{stats.verifiedUsers.toLocaleString()}</strong>
+            </div>
+            <div className="stat-detail-row">
+              <span>⏳ Unverified</span>
+              <strong className="text-orange">{stats.unverifiedUsers.toLocaleString()}</strong>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h2>Quick Actions</h2>
-        <div className="actions-grid">
-          <button className="action-card">
-            <span className="action-icon">🏪</span>
-            <span className="action-label">Review Restaurants</span>
-            <span className="action-count">{stats.pendingRestaurants} pending</span>
-          </button>
-          <button className="action-card">
-            <span className="action-icon">⭐</span>
-            <span className="action-label">Moderate Reviews</span>
-            <span className="action-count">{stats.unverifiedReviews} unverified</span>
-          </button>
-          <button className="action-card">
-            <span className="action-icon">👥</span>
-            <span className="action-label">Manage Users</span>
-            <span className="action-count">{stats.totalUsers} total</span>
-          </button>
+        <div className="stat-detail-card">
+          <div className="stat-detail-icon">⭐</div>
+          <div className="stat-detail-content">
+            <h4>Reviews</h4>
+            <div className="stat-detail-row">
+              <span>Total</span>
+              <strong>{stats.totalReviews.toLocaleString()}</strong>
+            </div>
+            <div className="stat-detail-row">
+              <span>✅ Verified</span>
+              <strong className="text-green">{stats.verifiedReviews.toLocaleString()}</strong>
+            </div>
+            <div className="stat-detail-row">
+              <span>⏳ Unverified</span>
+              <strong className="text-orange">{stats.unverifiedReviews.toLocaleString()}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-detail-card">
+          <div className="stat-detail-icon">🏪</div>
+          <div className="stat-detail-content">
+            <h4>Restaurants</h4>
+            <div className="stat-detail-row">
+              <span>Total</span>
+              <strong>{stats.totalRestaurants.toLocaleString()}</strong>
+            </div>
+            <div className="stat-detail-row">
+              <span>✅ Approved</span>
+              <strong className="text-green">
+                {(stats.totalRestaurants - stats.pendingRestaurants).toLocaleString()}
+              </strong>
+            </div>
+            <div className="stat-detail-row">
+              <span>⏳ Pending</span>
+              <strong className="text-orange">{stats.pendingRestaurants.toLocaleString()}</strong>
+            </div>
+          </div>
         </div>
       </div>
     </div>
