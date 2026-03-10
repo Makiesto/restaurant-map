@@ -17,7 +17,7 @@ const RestaurantDetails: React.FC = () => {
   const [userAllergens, setUserAllergens] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
 
   useEffect(() => {
     if (restaurantId) {
@@ -34,7 +34,7 @@ const RestaurantDetails: React.FC = () => {
         apiService.getRestaurantMenu(parseInt(restaurantId!)),
       ]);
       setRestaurant(restaurantData);
-      setDishes(menuData.filter(dish => dish.isAvailable)); // Only show available dishes
+      setDishes(menuData.filter(dish => dish.isAvailable));
       setError(null);
     } catch (err) {
       console.error('Failed to load restaurant:', err);
@@ -49,19 +49,12 @@ const RestaurantDetails: React.FC = () => {
       const allergens = await apiService.getUserAllergens();
       setUserAllergens(allergens.map(a => a.name));
     } catch (err) {
-      // User might not be logged in or have no allergens set
       console.log('No user allergens loaded');
     }
   };
 
-  // Get unique categories from dishes (you can expand this based on your data)
-  const categories = ['all', ...new Set(dishes.map(d => d.description?.split(' ')[0] || 'Other'))];
 
-  const filteredDishes = selectedCategory === 'all'
-    ? dishes
-    : dishes.filter(d => d.description?.toLowerCase().includes(selectedCategory.toLowerCase()));
 
-  // Check if dish has user allergens
   const hasUserAllergens = (dish: Dish) => {
     return dish.allergens?.some(allergen => userAllergens.includes(allergen)) || false;
   };
@@ -166,7 +159,6 @@ const RestaurantDetails: React.FC = () => {
               <p className="restaurant-description">{restaurant.description}</p>
             )}
 
-            {/* Dietary Options */}
             {restaurant.dietaryOptions && restaurant.dietaryOptions.length > 0 && (
               <div className="dietary-options">
                 <h4>Dietary Options:</h4>
@@ -185,29 +177,14 @@ const RestaurantDetails: React.FC = () => {
 
       {/* Main Content */}
       <div className="restaurant-content">
-        {/* Menu Section */}
         <section className="menu-section">
           <div className="section-header">
             <h2>Menu</h2>
             <span className="item-count">{dishes.length} items</span>
           </div>
 
-          {/* Category Filter */}
-          {categories.length > 1 && (
-            <div className="category-filter">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`category-btn ${selectedCategory === category ? 'active' : ''}`}
-                >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </button>
-              ))}
-            </div>
-          )}
 
-          {/* Allergen Notice */}
+
           {userAllergens.length > 0 && (
             <div className="allergen-notice">
               <span className="notice-icon">⚠️</span>
@@ -218,14 +195,13 @@ const RestaurantDetails: React.FC = () => {
             </div>
           )}
 
-          {/* Dishes Grid */}
-          {filteredDishes.length === 0 ? (
+          {dishes.length === 0 ? (
             <div className="no-dishes">
               <p>No dishes available in this category</p>
             </div>
           ) : (
             <div className="dishes-grid">
-              {filteredDishes.map((dish) => {
+              {dishes.map((dish) => {
                 const hasAllergens = hasUserAllergens(dish);
 
                 return (
@@ -233,7 +209,6 @@ const RestaurantDetails: React.FC = () => {
                     key={dish.id}
                     className={`dish-card ${hasAllergens ? 'has-allergens' : ''}`}
                   >
-                    {/* Dish Image */}
                     {dish.imageUrl && (
                       <div className="dish-image">
                         <img src={dish.imageUrl} alt={dish.name} />
@@ -246,18 +221,15 @@ const RestaurantDetails: React.FC = () => {
                     )}
 
                     <div className="dish-content">
-                      {/* Dish Header */}
                       <div className="dish-header">
                         <h3>{dish.name}</h3>
                         <span className="dish-price">${dish.price.toFixed(2)}</span>
                       </div>
 
-                      {/* Description */}
                       {dish.description && (
                         <p className="dish-description">{dish.description}</p>
                       )}
 
-                      {/* Allergen Warning */}
                       {hasAllergens && dish.allergens && (
                         <AllergenWarning
                           dishAllergens={dish.allergens}
@@ -266,7 +238,6 @@ const RestaurantDetails: React.FC = () => {
                         />
                       )}
 
-                      {/* Allergen Badges */}
                       {dish.allergens && dish.allergens.length > 0 && (
                         <AllergenBadges
                           allergens={dish.allergens}
@@ -275,7 +246,6 @@ const RestaurantDetails: React.FC = () => {
                         />
                       )}
 
-                      {/* Nutrition Info */}
                       {(dish.baseKcal || dish.baseProteinG || dish.baseCarbsG || dish.baseFatG) && (
                         <div className="nutrition-info">
                           <h4>Nutrition Information</h4>
@@ -315,7 +285,6 @@ const RestaurantDetails: React.FC = () => {
           )}
         </section>
 
-        {/* Reviews Section */}
         <section className="reviews-section">
           <ReviewSection restaurantId={parseInt(restaurantId!)} />
         </section>
