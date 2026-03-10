@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 import {useAuth} from '../context/AuthContext';
 import {apiService} from '../services/api';
 import AllergenManager from '../components/allergens/AllergenManager';
@@ -14,12 +14,19 @@ type TabType = 'account' | 'allergens' | 'activity';
 const Profile: React.FC = () => {
     const {user, logout, refreshUser} = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
-    // Debug: Log user changes
     useEffect(() => {
         console.log('Profile page - user updated:', user);
     }, [user]);
-    const [activeTab, setActiveTab] = useState<TabType>('account');
+
+    const getInitialTab = (): TabType => {
+        const tab = searchParams.get('tab');
+        if (tab === 'allergens' || tab === 'activity') return tab;
+        return 'account';
+    };
+
+    const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
     const [showAllergenManager, setShowAllergenManager] = useState(false);
     const [loading, setLoading] = useState(true);
     const [userAllergens, setUserAllergens] = useState<string[]>([]);
@@ -53,7 +60,6 @@ const Profile: React.FC = () => {
 
     const handleAllergenManagerClose = () => {
         setShowAllergenManager(false);
-        // Reload allergens after closing
         loadUserData();
     };
 
@@ -76,22 +82,18 @@ const Profile: React.FC = () => {
         console.log('API returned updated user:', result);
 
         if (emailChanged) {
-            // Email changed - must log out and log back in with new email
             alert('Email updated successfully! You will be logged out. Please log in again with your new email address.');
             logout();
             navigate('/login');
         } else {
-            // Only phone number changed - refresh user data without page reload
             console.log('Phone number updated, refreshing user data...');
             try {
-                // Small delay to ensure DB transaction completes
                 await new Promise(resolve => setTimeout(resolve, 500));
                 await refreshUser();
                 console.log('User refreshed successfully');
                 setShowEditProfile(false);
             } catch (error) {
                 console.error('Failed to refresh user:', error);
-                // Don't close modal on error, user can try again
                 alert('Profile updated but failed to refresh. Please reload the page manually.');
             }
         }
@@ -99,7 +101,6 @@ const Profile: React.FC = () => {
 
     const handleChangePassword = async (currentPassword: string, newPassword: string) => {
         await apiService.changePassword({currentPassword, newPassword});
-        // Log user out after password change for security
         logout();
         navigate('/login');
     };
@@ -173,8 +174,8 @@ const Profile: React.FC = () => {
                             Phone Number
                         </span>
                         <span className={`info-value ${!user?.phoneNumber ? 'empty' : ''}`}>
-              {user?.phoneNumber || 'Not provided'}
-            </span>
+                            {user?.phoneNumber || 'Not provided'}
+                        </span>
                     </div>
 
                     <div className="info-item">
@@ -191,8 +192,8 @@ const Profile: React.FC = () => {
                             Member Since
                         </span>
                         <span className="info-value">
-              {user?.createdAt ? formatDate(user.createdAt) : 'Unknown'}
-            </span>
+                            {user?.createdAt ? formatDate(user.createdAt) : 'Unknown'}
+                        </span>
                     </div>
 
                     {user?.verifiedAt && (
@@ -211,8 +212,8 @@ const Profile: React.FC = () => {
                             Account Status
                         </span>
                         <span className="info-value">
-              {user?.isActive ? '✅ Active' : '❌ Inactive'}
-            </span>
+                            {user?.isActive ? '✅ Active' : '❌ Inactive'}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -293,9 +294,9 @@ const Profile: React.FC = () => {
                     <div className="allergen-preview">
                         {userAllergens.map((allergen, index) => (
                             <span key={index} className="allergen-badge-mini has-allergens">
-                <span className="allergen-icon-mini">⚠️</span>
+                                <span className="allergen-icon-mini">⚠️</span>
                                 {allergen}
-              </span>
+                            </span>
                         ))}
                     </div>
 
